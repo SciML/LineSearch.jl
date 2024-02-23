@@ -1,8 +1,6 @@
 using LineSearch
 using Test
 
-# @test my_f(1,2) == 3
-
 @testset "LineSearch.jl" begin
     # Write your tests here.
 
@@ -23,19 +21,3 @@ using Test
     @test α == 0.5
     @test 0 == 0
 end
-
-
-# t = Template(;
-#             user = "Xiaoyi-Qu",
-#             license = "MIT",
-#             authors = ["To be added"],
-#             dir = "~/.julia/packages",
-#             plugins = [
-#                 TravisCI(),
-#                 Codecov(),
-#                 Coveralls(),
-#                 AppVeyor()
-#             ],
-#     )
-
-# generate("LineSearch", t)
