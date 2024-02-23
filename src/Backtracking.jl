@@ -19,10 +19,6 @@ mutable struct Backtracking{X, F, A}
     α::A
 end
 
-function my_f(x,y)
-    return x+y
-end
-
 # Determine step size by backtracking line search
 function Backtracking(backtrack::Backtracking)
     # Setup (Function information)
