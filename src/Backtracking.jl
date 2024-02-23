@@ -8,7 +8,7 @@ Input parameters:
     - g: gradient 
     - α: initial step size
     - p: descent direction
-    - f: function evaluation 
+    - f: function evaluation
 =#
 
 mutable struct Backtracking{X, F, A}
