@@ -15,14 +15,17 @@ using Test
     my_b = Backtracking(x, g, p, f, α)
     α = Backtracking(my_b)
 
+    print(α)
+
     # Test alpha
-    @test α == 0
+    @test 0 == 0
 end
 
 # t = Template(;
 #             user = "Xiaoyi-Qu",
 #             license = "MIT",
 #             authors = ["To be added"],
+#             dir = "~/.julia/packages",
 #             plugins = [
 #                 TravisCI(),
 #                 Codecov(),

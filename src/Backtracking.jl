@@ -11,15 +11,12 @@ Input parameters:
     - f: function evaluation 
 =#
 
-@with_kw mutable struct Backtracking{X, F, A} <: AbstractLineSearch
+mutable struct Backtracking{X, F, A}
     x::X
     g::X
     p::X
     f::F
     α::A
-    c1 = 1e-4
-    β = 0.5
-    iterations = 1_000
 end
 
 # Determine step size by backtracking line search
@@ -29,6 +26,10 @@ function Backtracking(backtrack::Backtracking)
     α = backtrack.α
     p = backtrack.p
     f = backtrack.f
+
+    c1 = 1e-4
+    β = 0.5
+    iterations = 1_000
 
     ϕ_0 = f(x)
     ϕ_α = f(x + α*p)
