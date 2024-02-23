@@ -19,14 +19,20 @@ mutable struct Backtracking{X, F, A}
     α::A
 end
 
+function my_f(x,y)
+    return x+y
+end
+
 # Determine step size by backtracking line search
 function Backtracking(backtrack::Backtracking)
+    # Setup (Function information)
     x = backtrack.x
     g = backtrack.g
     α = backtrack.α
     p = backtrack.p
     f = backtrack.f
 
+    # Setup (Parameters)
     c1 = 1e-4
     β = 0.5
     iterations = 1_000
@@ -35,7 +41,8 @@ function Backtracking(backtrack::Backtracking)
     ϕ_α = f(x + α*p)
     iteration = 0
 
-    while ϕ_α > ϕ_0 + c_1 * α * g * p
+    # Backtracking line search
+    while ϕ_α > ϕ_0 + c1 * α * g * p
         # Increment the number of steps we've had to perform
         iteration += 1
 
@@ -46,6 +53,9 @@ function Backtracking(backtrack::Backtracking)
 
         # Decrease the step-size
         α = β * α
+
+        # Update function value at new iterate
+        ϕ_α = f(x + α*p)
     end
 
     return α

@@ -1,14 +1,16 @@
 using LineSearch
 using Test
 
+# @test my_f(1,2) == 3
+
 @testset "LineSearch.jl" begin
     # Write your tests here.
 
-    # Quadratic function
+    # Test1: Quadratic function
     f(u) = u*u
-    u0 = 1
+    x = 1
     g = 2
-    p = -g
+    p = -g 
     α = 1
 
     # Create a Backtracking object
@@ -18,8 +20,10 @@ using Test
     print(α)
 
     # Test alpha
+    @test α == 0.5
     @test 0 == 0
 end
+
 
 # t = Template(;
 #             user = "Xiaoyi-Qu",
