@@ -3,21 +3,18 @@ using Test
 
 @testset "LineSearch.jl" begin
     # Write your tests here.
-
     # Test1: Quadratic function
-    f(u) = u*u
-    x = 1
-    g = 2
+    f(u) = u'u
+    x = [1.0]
+    g = [2.0]
     p = -g 
-    α = 1
+    α = 1.0
 
-    # Create a Backtracking object
-    my_b = Backtracking(x, g, p, f, α)
-    α = Backtracking(my_b)
+    # Backtracking line search
+    α = Backtracking(x, g, p, f, α)
 
-    print(α)
+    # print(α) # α=0.5
 
     # Test alpha
     @test α == 0.5
-    @test 0 == 0
 end
