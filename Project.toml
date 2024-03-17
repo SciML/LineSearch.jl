@@ -3,6 +3,9 @@ uuid = "87fe0de2-c867-4266-b59a-2f0a94fc965b"
 authors = ["Vaibhav Dixit <vaibhavyashdixit@gmail.com> and contributors"]
 version = "1.0.0-DEV"
 
+[deps]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
 [compat]
 julia = "1.9"
 
