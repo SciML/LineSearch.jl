@@ -1,13 +1,15 @@
 name = "LineSearch"
 uuid = "87fe0de2-c867-4266-b59a-2f0a94fc965b"
-authors = ["Vaibhav Dixit <vaibhavyashdixit@gmail.com> and contributors"]
-version = "1.0.0-DEV"
+authors = ["SciML"]
+version = "1.0.0"
 
 [compat]
-julia = "1.9"
+julia = "1.10"
 
 [extras]
+InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 
 [targets]
-test = ["Test"]
+test = ["InteractiveUtils", "Test", "TestItemRunner"]
