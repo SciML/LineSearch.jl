@@ -11,6 +11,9 @@ DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
 FastClosures = "9aa1b823-49e4-5ca5-8b0f-3971ec8bab6a"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
+[extensions]
+LineSearchLineSearchesExt = "LineSearches"
+
 [weakdeps]
 LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
 
