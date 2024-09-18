@@ -4,7 +4,6 @@ on:
   pull_request:
     branches:
       - main
-      - 'release-'
     paths-ignore:
       - 'docs/**'
   push:
@@ -20,14 +19,5 @@ concurrency:
 jobs:
   tests:
     name: "Tests"
-    strategy:
-      fail-fast: false
-      matrix:
-        version:
-          - '1'
-          - 'lts'
-          - 'nightly'
     uses: "SciML/.github/.github/workflows/tests.yml@v1"
-    with:
-      julia-version: "${{ matrix.version }}"
     secrets: "inherit"

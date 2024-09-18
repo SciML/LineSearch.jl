@@ -1,6 +1,5 @@
-using LineSearch
-using Test
+using TestItemRunner, InteractiveUtils
 
-@testset "LineSearch.jl" begin
-    # Write your tests here.
-end
+@info sprint(InteractiveUtils.versioninfo)
+
+@run_package_tests
