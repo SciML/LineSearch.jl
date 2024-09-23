@@ -4,13 +4,17 @@ using ADTypes: ADTypes
 using CommonSolve: CommonSolve
 using ConcreteStructs: @concrete
 using DifferentiationInterface: DifferentiationInterface
+using EnzymeCore: EnzymeCore
 using FastClosures: @closure
-using SciMLBase: AbstractNonlinearProblem, ReturnCode
+using SciMLBase: AbstractSciMLProblem, AbstractNonlinearProblem, NonlinearProblem,
+                 NonlinearLeastSquaresProblem, ReturnCode
 
 const DI = DifferentiationInterface
 
 abstract type AbstractLineSearchAlgorithm end
 abstract type AbstractLineSearchCache end
+
+include("utils.jl")
 
 include("li_fukushima.jl")
 include("no_search.jl")
