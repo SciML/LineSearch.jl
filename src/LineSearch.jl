@@ -6,13 +6,19 @@ using ConcreteStructs: @concrete
 using DifferentiationInterface: DifferentiationInterface
 using EnzymeCore: EnzymeCore
 using FastClosures: @closure
-using SciMLBase: AbstractSciMLProblem, AbstractNonlinearProblem, NonlinearProblem,
-                 NonlinearLeastSquaresProblem, ReturnCode
+using LinearAlgebra: norm, dot
+using MaybeInplace: @bb
+using SciMLBase: SciMLBase, AbstractSciMLProblem, AbstractNonlinearProblem,
+                 NonlinearProblem, NonlinearLeastSquaresProblem, NonlinearFunction,
+                 ReturnCode
+using SciMLJacobianOperators: VecJacOperator, JacVecOperator
 
 const DI = DifferentiationInterface
 
 abstract type AbstractLineSearchAlgorithm end
 abstract type AbstractLineSearchCache end
+
+# TODO: define `reinit!` for LineSearch
 
 include("utils.jl")
 
@@ -29,6 +35,7 @@ end
 
 export LineSearchSolution
 
-export NoLineSearch, NoLineSearchCache
+export NoLineSearch
+export LineSearchesJL
 
 end
