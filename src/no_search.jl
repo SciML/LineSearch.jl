@@ -11,8 +11,9 @@ end
     alpha <: Real
 end
 
-function CommonSolve.init(prob::AbstractNonlinearProblem, alg::NoLineSearch; kwargs...)
-    return NoLineSearchCache(eltype(prob.u)(alg.alpha))
+function CommonSolve.init(
+        prob::AbstractNonlinearProblem, alg::NoLineSearch, fu, u; kwargs...)
+    return NoLineSearchCache(promote_type(eltype(fu), eltype(u))(alg.alpha))
 end
 
 function CommonSolve.solve!(cache::NoLineSearchCache, u, du)
