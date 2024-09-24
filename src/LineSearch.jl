@@ -35,7 +35,7 @@ end
 
 export LineSearchSolution
 
-export NoLineSearch
+export NoLineSearch, LiFukushimaLineSearch
 export LineSearchesJL
 
 end
