@@ -3,8 +3,6 @@ module LineSearch
 using ADTypes: ADTypes
 using CommonSolve: CommonSolve
 using ConcreteStructs: @concrete
-using DifferentiationInterface: DifferentiationInterface
-using EnzymeCore: EnzymeCore
 using FastClosures: @closure
 using LinearAlgebra: norm, dot
 using MaybeInplace: @bb
@@ -13,13 +11,11 @@ using SciMLBase: SciMLBase, AbstractSciMLProblem, AbstractNonlinearProblem,
                  ReturnCode
 using SciMLJacobianOperators: VecJacOperator, JacVecOperator
 
-const DI = DifferentiationInterface
-
 abstract type AbstractLineSearchAlgorithm end
 abstract type AbstractLineSearchCache end
 
 # Needed for certain algorithms like RobustNonMonotoneLineSearch
-function callback_into_cache!(cache::AbstractLineSearchCache, fu) end
+function callback_into_cache!(::AbstractLineSearchCache, _) end
 
 # TODO: define `reinit!` for LineSearch
 
