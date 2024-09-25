@@ -18,6 +18,9 @@ const DI = DifferentiationInterface
 abstract type AbstractLineSearchAlgorithm end
 abstract type AbstractLineSearchCache end
 
+# Needed for certain algorithms like RobustNonMonotoneLineSearch
+function callback_into_cache!(cache::AbstractLineSearchCache, fu) end
+
 # TODO: define `reinit!` for LineSearch
 
 include("utils.jl")
@@ -35,7 +38,7 @@ end
 
 export LineSearchSolution
 
-export NoLineSearch, LiFukushimaLineSearch
+export NoLineSearch, LiFukushimaLineSearch, RobustNonMonotoneLineSearch
 export LineSearchesJL
 
 end
