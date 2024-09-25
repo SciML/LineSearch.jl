@@ -17,7 +17,7 @@ differentiation for fast VJPs or JVPs.
     `method = LineSearches.Static()`, which means that the step size is fixed to the value
     of `alpha`.
   - `autodiff`: the automatic differentiation backend to use for the line search. Must be
-    specificied if analytic jacobian/jvp/vjp is not available.
+    specified if analytic jacobian/jvp/vjp is not available.
   - `initial_alpha`: the initial step size to use. Defaults to `true` (which is equivalent
     to `1`).
 """
