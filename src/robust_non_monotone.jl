@@ -98,7 +98,7 @@ function CommonSolve.solve!(cache::RobustNonMonotoneLineSearchCache, u, du)
 
     for _ in 1:(cache.maxiters)
         f_norm = ϕ(α₊)
-        f_norm ≤ f_bar + η - cache.γ * α₊^f_norm_old && return LineSearchSolution(
+        f_norm ≤ f_bar + η - cache.γ * α₊ * f_norm_old && return LineSearchSolution(
             α₊, ReturnCode.Success)
 
         α₊ *= clamp(
@@ -108,7 +108,7 @@ function CommonSolve.solve!(cache::RobustNonMonotoneLineSearchCache, u, du)
         )
 
         f_norm = ϕ(-α₋)
-        f_norm ≤ f_bar + η - cache.γ * α₋^f_norm_old && return LineSearchSolution(
+        f_norm ≤ f_bar + η - cache.γ * α₋ * f_norm_old && return LineSearchSolution(
             -α₋, ReturnCode.Success)
 
         α₋ *= clamp(
