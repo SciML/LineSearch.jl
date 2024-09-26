@@ -14,7 +14,7 @@ using LineSearches, LineSearch
 
 !!! tip
     
-    Unlike `LineSearches.jl`, we automatically contruct the gradient/jacobian functionality
+    Unlike `LineSearches.jl`, we automatically construct the gradient/jacobian functionality
     from the problem specification using automatic differentiation (if analytic versions
     are not provided).
 
