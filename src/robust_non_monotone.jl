@@ -61,6 +61,7 @@ end
     η_strategy
     n_exp::Int
     stats <: Union{SciMLBase.NLStats, Nothing}
+    alg <: RobustNonMonotoneLineSearch
 end
 
 function CommonSolve.init(
@@ -83,7 +84,7 @@ function CommonSolve.init(
     return RobustNonMonotoneLineSearchCache(
         prob.f, prob.p, ϕ, u_cache, fu_cache, T(1), alg.maxiters, fill(fn₁, alg.M),
         T(alg.gamma), T(alg.sigma_1), alg.M, T(alg.tau_min), T(alg.tau_max), 0, η_strategy,
-        alg.n_exp, stats)
+        alg.n_exp, stats, alg)
 end
 
 function CommonSolve.solve!(cache::RobustNonMonotoneLineSearchCache, u, du)
@@ -125,4 +126,17 @@ function callback_into_cache!(cache::RobustNonMonotoneLineSearchCache, fu)
     cache.history[mod1(cache.nsteps, cache.M)] = norm(fu)^cache.n_exp
     cache.nsteps += 1
     return
+end
+
+function SciMLBase.reinit!(
+        cache::RobustNonMonotoneLineSearchCache; p = missing, stats = missing, kwargs...)
+    p !== missing && (cache.p = p)
+    stats !== missing && (cache.stats = stats)
+    cache.σ₁ = oftype(cache.σ₁, cache.alg.sigma_1)
+    cache.M = oftype(cache.M, cache.alg.M)
+    cache.τ_min = oftype(cache.τ_min, cache.alg.tau_min)
+    cache.τ_max = oftype(cache.τ_max, cache.alg.tau_max)
+    cache.nsteps = 0
+    # NOTE: Don't zero out the stats here, since we don't own it
+    return cache
 end
