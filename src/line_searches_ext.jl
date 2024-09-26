@@ -49,6 +49,7 @@ end
     u_cache
     fu_cache
     stats <: Union{SciMLBase.NLStats, Nothing}
+    alg <: LineSearchesJL
 end
 
 # Both forward and reverse AD can be used for line-search.
@@ -120,7 +121,7 @@ function CommonSolve.init(
 
     return LineSearchesJLCache(
         prob.f, prob.p, ϕ, dϕ, ϕdϕ, alg.method, T(alg.initial_alpha),
-        deriv_op, u_cache, fu_cache, stats)
+        deriv_op, u_cache, fu_cache, stats, alg)
 end
 
 function CommonSolve.solve!(cache::LineSearchesJLCache, u, du)
@@ -140,4 +141,13 @@ function CommonSolve.solve!(cache::LineSearchesJLCache, u, du)
     # but it's not worth the extra complexity
     cache.alpha = first(cache.method(ϕ, dϕ, ϕdϕ, cache.alpha, ϕ₀, dϕ₀))
     return LineSearchSolution(cache.alpha, ReturnCode.Success)
+end
+
+function SciMLBase.reinit!(
+        cache::LineSearchesJLCache; p = missing, stats = missing, kwargs...)
+    p !== missing && (cache.p = p)
+    stats !== missing && (cache.stats = stats)
+    cache.alpha = oftype(cache.alpha, cache.alg.initial_alpha)
+    # NOTE: Don't zero out the stats here, since we don't own it
+    return cache
 end

@@ -33,6 +33,7 @@ end
     nan_maxiters::Int
     maxiters::Int
     stats <: Union{SciMLBase.NLStats, Nothing}
+    alg <: LiFukushimaLineSearch
 end
 
 function CommonSolve.init(
@@ -52,7 +53,7 @@ function CommonSolve.init(
     return LiFukushimaLineSearchCache(
         ϕ, prob.f, prob.p, T(1), u_cache, fu_cache, alg.lambda_0, alg.beta,
         alg.sigma_1, alg.sigma_2, alg.eta, alg.rho, T(1), alg.nan_maxiters,
-        alg.maxiters, stats)
+        alg.maxiters, stats, alg)
 end
 
 function CommonSolve.solve!(cache::LiFukushimaLineSearchCache, u, du)
@@ -92,4 +93,19 @@ function CommonSolve.solve!(cache::LiFukushimaLineSearchCache, u, du)
     end
 
     return LineSearchSolution(cache.α, ReturnCode.Failure)
+end
+
+function SciMLBase.reinit!(
+        cache::LiFukushimaLineSearchCache; p = missing, stats = missing, kwargs...)
+    p !== missing && (cache.p = p)
+    stats !== missing && (cache.stats = stats)
+    cache.α = oftype(cache.α, true)
+    cache.λ₀ = oftype(cache.λ₀, cache.alg.lambda_0)
+    cache.β = oftype(cache.β, cache.alg.beta)
+    cache.σ₁ = oftype(cache.σ₁, cache.alg.sigma_1)
+    cache.σ₂ = oftype(cache.σ₂, cache.alg.sigma_2)
+    cache.η = oftype(cache.η, cache.alg.eta)
+    cache.ρ = oftype(cache.ρ, cache.alg.rho)
+    # NOTE: Don't zero out the stats here, since we don't own it
+    return cache
 end
