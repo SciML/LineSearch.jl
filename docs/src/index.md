@@ -8,7 +8,7 @@ statically sized small problems, with options for large-scale systems. If you ru
 performance issues, please file an issue.
 
 !!! warning
-
+    
     Currently this package is meant to be more developer focused. Most users are recommended
     to use this functionality via NonlinearSolve.jl. Support for other packages in the
     ecosystem like Optimization.jl are planned for the future.
