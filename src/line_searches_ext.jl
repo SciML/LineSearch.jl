@@ -30,7 +30,7 @@ struct LineSearchesJL{M, A, AD <: Union{Nothing, ADTypes.AbstractADType}} <:
     function LineSearchesJL(method, initial_alpha, autodiff)
         if Base.get_extension(@__MODULE__, :LineSearchLineSearchesExt) === nothing
             error("LineSearches.jl is not loaded. Please load the extension with \
-                   `using LineSearchesJL, LineSearches`")
+                   `using LineSearches`")
         end
         return new{typeof(method), typeof(initial_alpha), typeof(autodiff)}(
             method, initial_alpha, autodiff)
@@ -45,6 +45,7 @@ end
     ϕdϕ
     method
     alpha
+    initial_alpha
     deriv_op
     u_cache
     fu_cache
@@ -120,7 +121,7 @@ function CommonSolve.init(
     end
 
     return LineSearchesJLCache(
-        prob.f, prob.p, ϕ, dϕ, ϕdϕ, alg.method, T(alg.initial_alpha),
+        prob.f, prob.p, ϕ, dϕ, ϕdϕ, alg.method, T(alg.initial_alpha), T(alg.initial_alpha),
         deriv_op, u_cache, fu_cache, stats, alg)
 end
 
@@ -135,7 +136,7 @@ function CommonSolve.solve!(cache::LineSearchesJLCache, u, du)
 
     # Here we should be resetting the search direction for some algorithms especially
     # if we start mixing in jacobian reuse and such
-    dϕ₀ ≥ 0 && return LineSearchSolution(one(eltype(u)), ReturnCode.Failed)
+    dϕ₀ ≥ 0 && return LineSearchSolution(one(eltype(u)), ReturnCode.Failure)
 
     # We can technically reduce 1 axpy by reusing the returned value from cache.method
     # but it's not worth the extra complexity
@@ -147,7 +148,7 @@ function SciMLBase.reinit!(
         cache::LineSearchesJLCache; p = missing, stats = missing, kwargs...)
     p !== missing && (cache.p = p)
     stats !== missing && (cache.stats = stats)
-    cache.alpha = oftype(cache.alpha, cache.alg.initial_alpha)
+    cache.alpha = cache.initial_alpha
     # NOTE: Don't zero out the stats here, since we don't own it
     return cache
 end
