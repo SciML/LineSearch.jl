@@ -56,12 +56,15 @@ end
         nlf(x, p) = [p[1] - x[1], 10.0 * (x[2] - x[1]^2)]
         nlp = NonlinearProblem(nlf, [-1.0, 1.0], [1.0])
 
-        @testset for autodiff in (AutoTracker(), AutoForwardDiff(), AutoZygote(),
+        @testset for autodiff in (
+            AutoTracker(), AutoForwardDiff(), AutoZygote(),
             AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff()
         )
             @testset "method: $(nameof(typeof(method)))" for method in (
-                BackTracking(; order = 3), StrongWolfe(),
-                HagerZhang(), MoreThuente()
+                BackTracking(; order = 3),
+                StrongWolfe(),
+                HagerZhang(),
+                MoreThuente()
             )
                 linesearch = LineSearchesJL(; method, autodiff)
                 fu, u, iter, alphas = gradient_descent(nlp, linesearch; autodiff)
@@ -103,7 +106,8 @@ end
         nlf(x, p) = [p[1] - x[1], 10.0 * (x[2] - x[1]^2)]
         nlp = NonlinearProblem(nlf, [-1.0, 1.0], [1.0])
 
-        @testset for autodiff in (AutoTracker(), AutoForwardDiff(), AutoZygote(),
+        @testset for autodiff in (
+            AutoTracker(), AutoForwardDiff(), AutoZygote(),
             AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff()
         )
             @testset "method: $(nameof(typeof(method)))" for method in (
