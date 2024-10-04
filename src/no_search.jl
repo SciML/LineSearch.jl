@@ -4,11 +4,11 @@
 Don't perform a line search. Just return the initial step length of `alpha`.
 """
 @kwdef @concrete struct NoLineSearch <: AbstractLineSearchAlgorithm
-    alpha <: Real = true
+    alpha = true
 end
 
 @concrete mutable struct NoLineSearchCache <: AbstractLineSearchCache
-    alpha <: Real
+    alpha
 end
 
 function CommonSolve.init(
