@@ -146,7 +146,7 @@ function CommonSolve.solve!(cache::StaticLiFukushimaLineSearchCache, u, du)
 
     λ₂, λ₁ = cache.λ₀, cache.λ₀
 
-    for _ in 1:cache.maxiters
+    for _ in 1:(cache.maxiters)
         fxλp_norm = norm(cache.f(u .+ λ₂ .* du, cache.p))
         converged = fxλp_norm ≤ (1 + cache.η) * fx_norm - cache.σ₁ * λ₂^2 * du_norm^2
         converged && return LineSearchSolution(λ₂, ReturnCode.Success)
