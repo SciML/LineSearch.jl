@@ -51,8 +51,8 @@ function CommonSolve.init(
     end
 
     return LiFukushimaLineSearchCache(
-        ϕ, prob.f, prob.p, T(1), u_cache, fu_cache, alg.lambda_0, alg.beta,
-        alg.sigma_1, alg.sigma_2, alg.eta, alg.rho, T(1), alg.nan_maxiters,
+        ϕ, prob.f, prob.p, T(1), u_cache, fu_cache, T(alg.lambda_0), T(alg.beta),
+        T(alg.sigma_1), T(alg.sigma_2), T(alg.eta), T(alg.rho), T(1), alg.nan_maxiters,
         alg.maxiters, stats, alg)
 end
 
