@@ -198,9 +198,9 @@ uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 
 [[deps.DifferentiationInterface]]
 deps = ["ADTypes", "Compat", "LinearAlgebra", "PackageExtensionCompat"]
-git-tree-sha1 = "f5302609fda17fc4d00b1a99c91579b4f01cb121"
+git-tree-sha1 = "7e10eebf52857cd441274f74e3a172cad950437f"
 uuid = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
-version = "0.6.2"
+version = "0.6.5"
 
     [deps.DifferentiationInterface.extensions]
     DifferentiationInterfaceChainRulesCoreExt = "ChainRulesCore"
@@ -425,7 +425,7 @@ version = "1.17.0+0"
 deps = ["ADTypes", "CommonSolve", "ConcreteStructs", "FastClosures", "LinearAlgebra", "MaybeInplace", "SciMLBase", "SciMLJacobianOperators"]
 path = "/home/runner/work/LineSearch.jl/LineSearch.jl"
 uuid = "87fe0de2-c867-4266-b59a-2f0a94fc965b"
-version = "0.1.0"
+version = "0.1.1"
 
     [deps.LineSearch.extensions]
     LineSearchLineSearchesExt = "LineSearches"
@@ -610,9 +610,9 @@ version = "0.7.0"
 
 [[deps.SciMLBase]]
 deps = ["ADTypes", "Accessors", "ArrayInterface", "CommonSolve", "ConstructionBase", "Distributed", "DocStringExtensions", "EnumX", "Expronicon", "FunctionWrappersWrappers", "IteratorInterfaceExtensions", "LinearAlgebra", "Logging", "Markdown", "PrecompileTools", "Preferences", "Printf", "RecipesBase", "RecursiveArrayTools", "Reexport", "RuntimeGeneratedFunctions", "SciMLOperators", "SciMLStructures", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface", "Tables"]
-git-tree-sha1 = "ce6fb9b0d756446d902e4495f2447fa2ebfbb1f4"
+git-tree-sha1 = "885904799812ed88a607c03b38e9c3a4a5b08853"
 uuid = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
-version = "2.54.2"
+version = "2.55.0"
 
     [deps.SciMLBase.extensions]
     SciMLBaseChainRulesCoreExt = "ChainRulesCore"
