@@ -425,7 +425,7 @@ version = "1.17.0+0"
 deps = ["ADTypes", "CommonSolve", "ConcreteStructs", "FastClosures", "LinearAlgebra", "MaybeInplace", "SciMLBase", "SciMLJacobianOperators"]
 path = "/home/runner/work/LineSearch.jl/LineSearch.jl"
 uuid = "87fe0de2-c867-4266-b59a-2f0a94fc965b"
-version = "0.1.1"
+version = "0.1.2"
 
     [deps.LineSearch.extensions]
     LineSearchLineSearchesExt = "LineSearches"
