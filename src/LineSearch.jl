@@ -9,6 +9,7 @@ using MaybeInplace: @bb
 using SciMLBase: SciMLBase, AbstractSciMLProblem, AbstractNonlinearProblem, ReturnCode,
                  NonlinearProblem, NonlinearLeastSquaresProblem, NonlinearFunction
 using SciMLJacobianOperators: VecJacOperator, JacVecOperator
+using StaticArraysCore: SArray
 
 abstract type AbstractLineSearchAlgorithm end
 abstract type AbstractLineSearchCache end
