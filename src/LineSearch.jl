@@ -28,7 +28,7 @@ include("robust_non_monotone.jl")
 include("line_searches_ext.jl")
 
 @concrete struct LineSearchSolution
-    step_size <: Real
+    step_size
     retcode::ReturnCode.T
 end
 
