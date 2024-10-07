@@ -37,7 +37,7 @@ end
     η
     ρ
     α
-    nan_maxiters::Int
+    nan_maxiters <: Union{Missing, Nothing, Int}
     maxiters::Int
     stats <: Union{SciMLBase.NLStats, Nothing}
     alg <: LiFukushimaLineSearch
