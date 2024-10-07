@@ -15,11 +15,11 @@ equations [li2000derivative](@cite).
 """
 @kwdef @concrete struct LiFukushimaLineSearch <: AbstractLineSearchAlgorithm
     lambda_0 = 1
-    beta = 1 // 2
-    sigma_1 = 1 // 1000
-    sigma_2 = 1 // 1000
-    eta = 1 // 10
-    rho = 9 // 10
+    beta = 0.5
+    sigma_1 = 0.001
+    sigma_2 = 0.001
+    eta = 0.1
+    rho = 0.9
     nan_maxiters <: Union{Missing, Nothing, Int} = 5
     maxiters::Int = 100
 end
