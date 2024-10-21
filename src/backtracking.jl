@@ -115,7 +115,6 @@ function CommonSolve.solve!(cache::BackTrackingCache, u, du)
     α₂ = max(α_tmp, α₂ * T(cache.alg.ρ_lo))
     ϕx₀, ϕx₁ = ϕx₁, ϕ(α₂)
 
-    # Backtrack until we satisfy sufficient decrease condition
     for _ in (iteration + 1):(cache.maxiters)
         ϕx₁ ≤ ϕ₀ + T(cache.alg.c_1) * α₂ * dϕ₀ &&
             return LineSearchSolution(α₂, ReturnCode.Success)
