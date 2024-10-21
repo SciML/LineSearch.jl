@@ -116,7 +116,7 @@ end
                 LiFukushimaLineSearch(),
                 NoLineSearch(0.001),
                 BackTracking(; order = Val(3), autodiff),
-                BackTracking(; order = Val(2), autodiff),
+                BackTracking(; order = Val(2), autodiff)
             )
                 fu, u, iter, alphas = gradient_descent(nlp, method; autodiff)
 
@@ -138,7 +138,7 @@ end
                 LiFukushimaLineSearch(),
                 NoLineSearch(0.001),
                 BackTracking(; order = Val(3), autodiff),
-                BackTracking(; order = Val(2), autodiff),
+                BackTracking(; order = Val(2), autodiff)
             )
                 fu, u, iter, alphas = gradient_descent(nlp, method; autodiff)
 
