@@ -87,7 +87,7 @@ end
             AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff()
         )
             @testset "method: $(nameof(typeof(method)))" for method in (
-                BackTracking(; order = 3),
+                LineSearches.BackTracking(; order = 3),
                 StrongWolfe(),
                 HagerZhang(),
                 MoreThuente(),
@@ -110,7 +110,7 @@ end
             AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff()
         )
             @testset "method: $(nameof(typeof(method)))" for method in (
-                BackTracking(; order = 3),
+                LineSearches.BackTracking(; order = 3),
                 StrongWolfe(),
                 HagerZhang(),
                 MoreThuente(),
@@ -127,7 +127,8 @@ end
 end
 
 @testitem "Native Line Search: Newton Raphson" setup=[RootFinding] begin
-    using LineSearches, SciMLBase
+    using SciMLBase
+    using ADTypes, Tracker, ForwardDiff, Zygote, Enzyme, ReverseDiff, FiniteDiff
 
     @testset "OOP Problem" begin
         nlf(x, p) = x .^ 2 .- p
@@ -141,6 +142,21 @@ end
 
             @test fu≈[0.0, 0.0] atol=1e-1
             @test abs.(u)≈sqrt.([3.0, 3.0]) atol=1e-1
+        end
+
+        @testset for autodiff in (
+            AutoTracker(), AutoForwardDiff(), AutoZygote(),
+            AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff()
+        )
+            @testset "method: $(nameof(typeof(method)))" for method in (
+                BackTracking(; order = Val(3), autodiff),
+                BackTracking(; order = Val(2), autodiff)
+            )
+                converged, fu, u, iter, alphas = newton_raphson(nlp, method)
+
+                @test fu≈[0.0, 0.0] atol=1e-3
+                @test abs.(u)≈sqrt.([3.0, 3.0]) atol=1e-3
+            end
         end
     end
 
@@ -156,6 +172,20 @@ end
 
             @test fu≈[0.0, 0.0] atol=1e-1
             @test abs.(u)≈sqrt.([3.0, 3.0]) atol=1e-1
+        end
+
+        @testset for autodiff in (
+            AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff()
+        )
+            @testset "method: $(nameof(typeof(method)))" for method in (
+                BackTracking(; order = Val(3), autodiff),
+                BackTracking(; order = Val(2), autodiff)
+            )
+                converged, fu, u, iter, alphas = newton_raphson(nlp, method)
+
+                @test fu≈[0.0, 0.0] atol=1e-3
+                @test abs.(u)≈sqrt.([3.0, 3.0]) atol=1e-3
+            end
         end
     end
 end

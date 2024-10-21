@@ -20,6 +20,7 @@ jobs:
   tests:
     name: "Tests"
     strategy:
+      fail-fast: false
       matrix:
         version:
           - '1'
@@ -28,4 +29,5 @@ jobs:
     uses: "SciML/.github/.github/workflows/tests.yml@v1"
     with:
       julia-version: "${{ matrix.version }}"
+      group: "all"
     secrets: "inherit"

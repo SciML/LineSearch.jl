@@ -12,3 +12,9 @@ NoLineSearch
 LiFukushimaLineSearch
 RobustNonMonotoneLineSearch
 ```
+
+## Backtracking Line Search
+
+```@docs
+BackTracking
+```

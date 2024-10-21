@@ -61,7 +61,7 @@ end
             AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff()
         )
             @testset "method: $(nameof(typeof(method)))" for method in (
-                BackTracking(; order = 3),
+                LineSearches.BackTracking(; order = 3),
                 StrongWolfe(),
                 HagerZhang(),
                 MoreThuente()
@@ -84,8 +84,10 @@ end
             AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff()
         )
             @testset "method: $(nameof(typeof(method)))" for method in (
-                BackTracking(; order = 3), StrongWolfe(),
-                HagerZhang(), MoreThuente()
+                LineSearches.BackTracking(; order = 3),
+                StrongWolfe(),
+                HagerZhang(),
+                MoreThuente()
             )
                 linesearch = LineSearchesJL(; method, autodiff)
                 fu, u, iter, alphas = gradient_descent(nlp, linesearch; autodiff)
@@ -99,7 +101,7 @@ end
 end
 
 @testitem "Native Line Search: Custom Optimizer" setup=[CustomOptimizer] begin
-    using LineSearches, SciMLBase
+    using SciMLBase
     using ADTypes, Tracker, ForwardDiff, Zygote, Enzyme, ReverseDiff, FiniteDiff
 
     @testset "OOP Problem" begin
@@ -112,7 +114,9 @@ end
         )
             @testset "method: $(nameof(typeof(method)))" for method in (
                 LiFukushimaLineSearch(),
-                NoLineSearch(0.001)
+                NoLineSearch(0.001),
+                BackTracking(; order = Val(3), autodiff),
+                BackTracking(; order = Val(2), autodiff)
             )
                 fu, u, iter, alphas = gradient_descent(nlp, method; autodiff)
 
@@ -132,7 +136,9 @@ end
         )
             @testset "method: $(nameof(typeof(method)))" for method in (
                 LiFukushimaLineSearch(),
-                NoLineSearch(0.001)
+                NoLineSearch(0.001),
+                BackTracking(; order = Val(3), autodiff),
+                BackTracking(; order = Val(2), autodiff)
             )
                 fu, u, iter, alphas = gradient_descent(nlp, method; autodiff)
 
