@@ -22,6 +22,7 @@ function SciMLBase.reinit!(::AbstractLineSearchCache; kwargs...) end
 
 include("utils.jl")
 
+include("backtracking.jl")
 include("li_fukushima.jl")
 include("no_search.jl")
 include("robust_non_monotone.jl")
@@ -35,6 +36,7 @@ end
 
 export LineSearchSolution
 
+export BackTracking
 export NoLineSearch, LiFukushimaLineSearch, RobustNonMonotoneLineSearch
 export LineSearchesJL
 
