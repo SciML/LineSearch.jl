@@ -11,7 +11,10 @@ using SciMLBase: SciMLBase, AbstractSciMLProblem, AbstractNonlinearProblem, Retu
 using SciMLJacobianOperators: VecJacOperator, JacVecOperator
 using StaticArraysCore: SArray
 
-abstract type AbstractLineSearchAlgorithm end
+# The 2 Core abstractions of this module
+# Base type for all line search algorithm
+abstract type AbstractLineSearchAlgorithm end 
+# Base type for all algorithm-specific caching
 abstract type AbstractLineSearchCache end
 
 # Needed for certain algorithms like RobustNonMonotoneLineSearch
@@ -28,6 +31,7 @@ include("no_search.jl")
 include("robust_non_monotone.jl")
 
 include("line_searches_ext.jl")
+include("hager_zhang.jl")
 
 @concrete struct LineSearchSolution
     step_size
@@ -37,6 +41,7 @@ end
 export LineSearchSolution
 
 export BackTracking
+export HagerZhang
 export NoLineSearch, LiFukushimaLineSearch, RobustNonMonotoneLineSearch
 export LineSearchesJL
 
