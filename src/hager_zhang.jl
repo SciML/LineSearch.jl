@@ -82,48 +82,6 @@ function CommonSolve.init(prob::AbstractNonlinearProblem, alg::HagerZhang,
                            α0, α0, stats, alg, alg.maxiters)
 end
 
-function CommonSolve.init(prob::AbstractNonlinearProblem, alg::HagerZhang,
-                        fu, u; stats=nothing, autodiff=nothing, kwargs...)
-    # 1. Determine numeric type
-    T = promote_type(eltype(fu), eltype(u))
-    # 2. Choose autodiff backend and construct derivative operator
-    autodiff = autodiff !== nothing ? autodiff : alg.autodiff
-    _, _, deriv_op = construct_jvp_or_vjp_operator(prob, fu, u; autodiff)
-    # 3. Allocate cache vectors for trial state
-    @bb u_cache = similar(u)
-    @bb fu_cache = similar(fu)
-    # 4. Define closures for φ(α) and φ+dφ(α)
-    ϕ   = @closure (f, p, u, du, α, u_cache, fu_cache) -> begin
-            @bb @. u_cache = u + α * du
-            fu_cache = SciMLBase.evaluate_f!!(f, fu_cache, u_cache, p)
-            SciMLBase.add_nf!(stats)             # increment function eval count
-            return norm(fu_cache)^2 / 2          # objective value
-        end
-    ϕdϕ = @closure (f, p, u, du, α, u_cache, fu_cache, deriv_op) -> begin
-            @bb @. u_cache = u + α * du
-            fu_cache = SciMLBase.evaluate_f!!(f, fu_cache, u_cache, p)
-            SciMLBase.add_nf!(stats)
-            # Compute directional derivative via AD or analytic Jacobian:
-            deriv = deriv_op(du, u_cache, fu_cache, p)
-            obj = norm(fu_cache)^2 / 2
-            return obj, deriv                   # (φ, φ')
-        end
-    # 5. Initial step size α (respect maxstep and initial_alpha)
-    u_norm = norm(u, Inf)
-    α0 = if u_norm == 0 
-            one(T)              # if current u is zero-vector, use step = 1
-        else 
-            alg.initial_alpha isa Bool ? one(T) : T(alg.initial_alpha)
-        end
-    α0 = min(α0, T(alg.maxstep) / T(max(u_norm, one(T))))
-    # 6. Initialize cache and return
-    return HagerZhangCache(prob.f, prob.p, ϕ, ϕdϕ, deriv_op,
-        u_cache, fu_cache,
-        Vector{T}(), Vector{T}(), Vector{T}(),
-        α0, α0, stats, alg, alg.maxiters)
-end
-
-
 function CommonSolve.solve!(cache::HagerZhangCache, u, du)
     T = promote_type(eltype(u), eltype(du))
     # φ0 and dφ0 at alpha = 0
@@ -151,7 +109,7 @@ function CommonSolve.solve!(cache::HagerZhangCache, u, du)
     iter_finite = 0
     while !(isfinite(φ_α) && isfinite(dφ_α)) && iter_finite < cache.alg.maxiters
         α *= T(cache.alg.psi3)   # reduce step
-        φ_α, dφ_α = cache.ϕdϕ(..., α, ...)    # reevaluate
+        φ_α, dφ_α = cache.ϕdϕ(cache.f, cache.p, u, du, α, cache.u_cache, cache.fu_cache, cache.deriv_op)    # reevaluate
         iter_finite += 1
     end
     if !(isfinite(φ_α) && isfinite(dφ_α))
@@ -197,7 +155,7 @@ function CommonSolve.solve!(cache::HagerZhangCache, u, du)
             end
             # Propose new α = α * rho
             α = min(cold * T(cache.alg.rho), T(cache.alg.maxstep))
-            φ_α, dφ_α = cache.ϕdϕ(..., α, ...)
+            φ_α, dφ_α = cache.ϕdϕ(cache.f, cache.p, u, du, α, cache.u_cache, cache.fu_cache, cache.deriv_op)
             # Check finite again, possibly bisect if not finite
             if !(isfinite(φ_α) && isfinite(dφ_α))
                 cache.alg.maxstep = α   # shrink maxstep to current α
@@ -206,7 +164,7 @@ function CommonSolve.solve!(cache::HagerZhangCache, u, du)
                 local it_f = 1
                 while !(isfinite(φ_α) && isfinite(dφ_α)) && it_f < cache.alg.maxiters && α_hi > nextfloat(α_lo)
                     α = (α_lo + α_hi)/2
-                    φ_α, dφ_α = cache.ϕdϕ(..., α, ...)
+                    φ_α, dφ_α = cache.ϕdϕ(cache.f, cache.p, u, du, α, cache.u_cache, cache.fu_cache, cache.deriv_op)
                     if isfinite(φ_α) && isfinite(dφ_α)
                         break
                     end
