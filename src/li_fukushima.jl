@@ -80,7 +80,8 @@ function generic_lifukushima_init(
     @bb fu_cache = similar(fu)
     T = promote_type(eltype(fu), eltype(u))
 
-    ϕ = @closure (f, p, u, du, α, u_cache, fu_cache) -> begin
+    ϕ = @closure (f, p, u, du, α, u_cache,
+        fu_cache) -> begin
         @bb @. u_cache = u + α * du
         fu_cache = evaluate_f!!(f, fu_cache, u_cache, p)
         add_nf!(stats)

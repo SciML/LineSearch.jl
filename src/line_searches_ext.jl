@@ -67,21 +67,24 @@ function CommonSolve.init(
     @bb u_cache = similar(u)
     @bb fu_cache = similar(fu)
 
-    ϕ = @closure (f, p, u, du, α, u_cache, fu_cache) -> begin
+    ϕ = @closure (f, p, u, du, α, u_cache,
+        fu_cache) -> begin
         @bb @. u_cache = u + α * du
         fu_cache = evaluate_f!!(f, fu_cache, u_cache, p)
         add_nf!(stats)
         return @fastmath norm(fu_cache)^2 / 2
     end
 
-    dϕ = @closure (f, p, u, du, α, u_cache, fu_cache, deriv_op) -> begin
+    dϕ = @closure (f, p, u, du, α, u_cache, fu_cache,
+        deriv_op) -> begin
         @bb @. u_cache = u + α * du
         fu_cache = evaluate_f!!(f, fu_cache, u_cache, p)
         add_nf!(stats)
         return deriv_op(du, u_cache, fu_cache, p)
     end
 
-    ϕdϕ = @closure (f, p, u, du, α, u_cache, fu_cache, deriv_op) -> begin
+    ϕdϕ = @closure (f, p, u, du, α, u_cache, fu_cache,
+        deriv_op) -> begin
         @bb @. u_cache = u + α * du
         fu_cache = evaluate_f!!(f, fu_cache, u_cache, p)
         add_nf!(stats)
