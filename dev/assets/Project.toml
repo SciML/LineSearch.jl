@@ -5,3 +5,8 @@ LineSearch = "87fe0de2-c867-4266-b59a-2f0a94fc965b"
 
 [sources]
 LineSearch = {path = "/home/runner/work/LineSearch.jl/LineSearch.jl"}
+
+[compat]
+Documenter = "1.16.1"
+DocumenterCitations = "1.4.1"
+LineSearch = "0.1.4"
