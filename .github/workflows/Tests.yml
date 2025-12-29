@@ -31,3 +31,16 @@ jobs:
       julia-version: "${{ matrix.version }}"
       group: "all"
     secrets: "inherit"
+
+  enzyme-tests:
+    name: "Enzyme Tests"
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - 'lts'
+    uses: "SciML/.github/.github/workflows/tests.yml@v1"
+    with:
+      julia-version: "${{ matrix.version }}"
+      group: "enzyme"
+    secrets: "inherit"

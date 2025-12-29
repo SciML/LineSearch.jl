@@ -50,15 +50,16 @@ end
 
 @testitem "LineSearches.jl: Custom Optimizer" setup=[CustomOptimizer] begin
     using LineSearches, SciMLBase
-    using ADTypes, Tracker, ForwardDiff, Zygote, Enzyme, ReverseDiff, FiniteDiff
+    using ADTypes, Tracker, ForwardDiff, Zygote, ReverseDiff, FiniteDiff
 
     @testset "OOP Problem" begin
         nlf(x, p) = [p[1] - x[1], 10.0 * (x[2] - x[1]^2)]
         nlp = NonlinearProblem(nlf, [-1.0, 1.0], [1.0])
 
+        # Note: AutoEnzyme tests are in a separate test group due to Julia version compatibility
         @testset for autodiff in (
             AutoTracker(), AutoForwardDiff(), AutoZygote(),
-            AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff()
+            AutoReverseDiff(), AutoFiniteDiff()
         )
             @testset "method: $(nameof(typeof(method)))" for method in (
                 LineSearches.BackTracking(; order = 3),
@@ -80,8 +81,9 @@ end
         nlf(dx, x, p) = (dx .= [p[1] - x[1], 10.0 * (x[2] - x[1]^2)])
         nlp = NonlinearProblem(nlf, [-1.0, 1.0], [1.0])
 
+        # Note: AutoEnzyme tests are in a separate test group due to Julia version compatibility
         @testset for autodiff in (
-            AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff()
+            AutoForwardDiff(), AutoReverseDiff(), AutoFiniteDiff()
         )
             @testset "method: $(nameof(typeof(method)))" for method in (
                 LineSearches.BackTracking(; order = 3),
@@ -102,15 +104,16 @@ end
 
 @testitem "Native Line Search: Custom Optimizer" setup=[CustomOptimizer] begin
     using SciMLBase
-    using ADTypes, Tracker, ForwardDiff, Zygote, Enzyme, ReverseDiff, FiniteDiff
+    using ADTypes, Tracker, ForwardDiff, Zygote, ReverseDiff, FiniteDiff
 
     @testset "OOP Problem" begin
         nlf(x, p) = [p[1] - x[1], 10.0 * (x[2] - x[1]^2)]
         nlp = NonlinearProblem(nlf, [-1.0, 1.0], [1.0])
 
+        # Note: AutoEnzyme tests are in a separate test group due to Julia version compatibility
         @testset for autodiff in (
             AutoTracker(), AutoForwardDiff(), AutoZygote(),
-            AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff()
+            AutoReverseDiff(), AutoFiniteDiff()
         )
             @testset "method: $(nameof(typeof(method)))" for method in (
                 LiFukushimaLineSearch(),
@@ -131,8 +134,9 @@ end
         nlf(dx, x, p) = (dx .= [p[1] - x[1], 10.0 * (x[2] - x[1]^2)])
         nlp = NonlinearProblem(nlf, [-1.0, 1.0], [1.0])
 
+        # Note: AutoEnzyme tests are in a separate test group due to Julia version compatibility
         @testset for autodiff in (
-            AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff()
+            AutoForwardDiff(), AutoReverseDiff(), AutoFiniteDiff()
         )
             @testset "method: $(nameof(typeof(method)))" for method in (
                 LiFukushimaLineSearch(),
