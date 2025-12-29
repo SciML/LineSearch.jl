@@ -76,15 +76,16 @@ end
 
 @testitem "LineSearches.jl: Newton Raphson" setup=[RootFinding] begin
     using LineSearches, SciMLBase
-    using ADTypes, Tracker, ForwardDiff, Zygote, Enzyme, ReverseDiff, FiniteDiff
+    using ADTypes, Tracker, ForwardDiff, Zygote, ReverseDiff, FiniteDiff
 
     @testset "OOP Problem" begin
         nlf(x, p) = x .^ 2 .- p
         nlp = NonlinearProblem(nlf, [-1.0, 1.0], [3.0])
 
+        # Note: AutoEnzyme tests are in a separate test group due to Julia version compatibility
         @testset for autodiff in (
             AutoTracker(), AutoForwardDiff(), AutoZygote(),
-            AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff()
+            AutoReverseDiff(), AutoFiniteDiff()
         )
             @testset "method: $(nameof(typeof(method)))" for method in (
                 LineSearches.BackTracking(; order = 3),
@@ -106,8 +107,9 @@ end
         nlf(dx, x, p) = (dx .= x .^ 2 .- p)
         nlp = NonlinearProblem(nlf, [-1.0, 1.0], [3.0])
 
+        # Note: AutoEnzyme tests are in a separate test group due to Julia version compatibility
         @testset for autodiff in (
-            AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff()
+            AutoForwardDiff(), AutoReverseDiff(), AutoFiniteDiff()
         )
             @testset "method: $(nameof(typeof(method)))" for method in (
                 LineSearches.BackTracking(; order = 3),
@@ -128,7 +130,7 @@ end
 
 @testitem "Native Line Search: Newton Raphson" setup=[RootFinding] begin
     using SciMLBase
-    using ADTypes, Tracker, ForwardDiff, Zygote, Enzyme, ReverseDiff, FiniteDiff
+    using ADTypes, Tracker, ForwardDiff, Zygote, ReverseDiff, FiniteDiff
 
     @testset "OOP Problem" begin
         nlf(x, p) = x .^ 2 .- p
@@ -144,9 +146,10 @@ end
             @test abs.(u)≈sqrt.([3.0, 3.0]) atol=1e-1
         end
 
+        # Note: AutoEnzyme tests are in a separate test group due to Julia version compatibility
         @testset for autodiff in (
             AutoTracker(), AutoForwardDiff(), AutoZygote(),
-            AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff()
+            AutoReverseDiff(), AutoFiniteDiff()
         )
             @testset "method: $(nameof(typeof(method)))" for method in (
                 BackTracking(; order = Val(3), autodiff),
@@ -174,8 +177,9 @@ end
             @test abs.(u)≈sqrt.([3.0, 3.0]) atol=1e-1
         end
 
+        # Note: AutoEnzyme tests are in a separate test group due to Julia version compatibility
         @testset for autodiff in (
-            AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff()
+            AutoForwardDiff(), AutoReverseDiff(), AutoFiniteDiff()
         )
             @testset "method: $(nameof(typeof(method)))" for method in (
                 BackTracking(; order = Val(3), autodiff),
