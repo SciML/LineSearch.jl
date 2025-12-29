@@ -1,4 +1,4 @@
-@testitem "Explicit Imports" begin
+@testitem "Explicit Imports" tags=[:nopre] begin
     using ExplicitImports, LineSearch
 
     @test check_no_implicit_imports(LineSearch) === nothing
