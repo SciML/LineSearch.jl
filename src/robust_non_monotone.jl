@@ -1,5 +1,5 @@
 """
-    RobustNonMonotoneLineSearch(; gamma = 1 // 10000, sigma_0 = 1, M::Int = 10,
+    RobustNonMonotoneLineSearch(; gamma = 1 // 10000, sigma_1 = 1, M::Int = 10,
         tau_min = 1 // 10, tau_max = 1 // 2, n_exp::Int = 2, maxiters::Int = 100,
         η_strategy = (fn₁, n, uₙ, fₙ) -> fn₁ / n^2)
 
