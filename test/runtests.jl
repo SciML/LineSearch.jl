@@ -1,5 +1,4 @@
-using ReTestItems, LineSearch, Hwloc, InteractiveUtils
-using Pkg
+using Pkg, InteractiveUtils
 
 @info sprint(InteractiveUtils.versioninfo)
 
@@ -22,6 +21,9 @@ if GROUP == "enzyme"
         include(joinpath(@__DIR__, "enzyme", "enzyme_tests.jl"))
     end
 else
+    # Only load these for the main test suite
+    using ReTestItems, LineSearch, Hwloc
+
     const RETESTITEMS_NWORKERS = parse(
         Int, get(ENV, "RETESTITEMS_NWORKERS", string(min(Hwloc.num_physical_cores(), 4))))
     const RETESTITEMS_NWORKER_THREADS = parse(Int,
