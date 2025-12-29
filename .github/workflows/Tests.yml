@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   tests:
-    name: "Tests"
+    name: "Tests (${{ matrix.group }}, Julia ${{ matrix.version }})"
     strategy:
       fail-fast: false
       matrix:
@@ -26,8 +26,15 @@ jobs:
           - '1'
           - 'lts'
           - 'pre'
+        group:
+          - 'all'
+          - 'nopre'
+        exclude:
+          # Don't run nopre tests on prerelease Julia
+          - group: nopre
+            version: 'pre'
     uses: "SciML/.github/.github/workflows/tests.yml@v1"
     with:
       julia-version: "${{ matrix.version }}"
-      group: "all"
+      group: "${{ matrix.group }}"
     secrets: "inherit"
