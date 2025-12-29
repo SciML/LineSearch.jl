@@ -1,7 +1,7 @@
 name = "LineSearch"
 uuid = "87fe0de2-c867-4266-b59a-2f0a94fc965b"
 authors = ["SciML"]
-version = "0.1.4"
+version = "0.1.5"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
