@@ -1,6 +1,6 @@
 # LineSearches.jl
 
-This is a extension for importing line search algorithms from LineSearches into the SciML
+This is an extension for importing line search algorithms from LineSearches.jl into the SciML
 interface. Note that these solvers do not come by default, and thus one needs to install the
 package before using these solvers:
 
