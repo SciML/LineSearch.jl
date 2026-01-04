@@ -66,13 +66,16 @@ end
 
 function CommonSolve.init(
         prob::AbstractNonlinearProblem, alg::RobustNonMonotoneLineSearch, fu, u;
-        stats::Union{SciMLBase.NLStats, Nothing} = nothing, kwargs...)
+        stats::Union{SciMLBase.NLStats, Nothing} = nothing, kwargs...
+    )
     @bb u_cache = similar(u)
     @bb fu_cache = similar(fu)
     T = promote_type(eltype(fu), eltype(u))
 
-    ϕ = @closure (f, p, u, du, α, u_cache,
-        fu_cache) -> begin
+    ϕ = @closure (
+        f, p, u, du, α, u_cache,
+        fu_cache,
+    ) -> begin
         @bb @. u_cache = u + α * du
         fu_cache = evaluate_f!!(f, fu_cache, u_cache, p)
         add_nf!(stats)
@@ -85,7 +88,8 @@ function CommonSolve.init(
     return RobustNonMonotoneLineSearchCache(
         prob.f, prob.p, ϕ, u_cache, fu_cache, T(1), alg.maxiters, fill(fn₁, alg.M),
         T(alg.gamma), T(alg.sigma_1), alg.M, T(alg.tau_min), T(alg.tau_max), 0, η_strategy,
-        alg.n_exp, stats, alg)
+        alg.n_exp, stats, alg
+    )
 end
 
 function CommonSolve.solve!(cache::RobustNonMonotoneLineSearchCache, u, du)
@@ -101,7 +105,8 @@ function CommonSolve.solve!(cache::RobustNonMonotoneLineSearchCache, u, du)
     for _ in 1:(cache.maxiters)
         f_norm = ϕ(α₊)
         f_norm ≤ f_bar + η - cache.γ * α₊ * f_norm_old && return LineSearchSolution(
-            α₊, ReturnCode.Success)
+            α₊, ReturnCode.Success
+        )
 
         α₊ *= clamp(
             α₊ * f_norm_old / (f_norm + (T(2) * α₊ - T(1)) * f_norm_old),
@@ -111,7 +116,8 @@ function CommonSolve.solve!(cache::RobustNonMonotoneLineSearchCache, u, du)
 
         f_norm = ϕ(-α₋)
         f_norm ≤ f_bar + η - cache.γ * α₋ * f_norm_old && return LineSearchSolution(
-            -α₋, ReturnCode.Success)
+            -α₋, ReturnCode.Success
+        )
 
         α₋ *= clamp(
             α₋ * f_norm_old / (f_norm + (T(2) * α₋ - T(1)) * f_norm_old),
@@ -130,7 +136,8 @@ function callback_into_cache!(cache::RobustNonMonotoneLineSearchCache, fu)
 end
 
 function SciMLBase.reinit!(
-        cache::RobustNonMonotoneLineSearchCache; p = missing, stats = missing, kwargs...)
+        cache::RobustNonMonotoneLineSearchCache; p = missing, stats = missing, kwargs...
+    )
     p !== missing && (cache.p = p)
     stats !== missing && (cache.stats = stats)
     cache.σ₁ = oftype(cache.σ₁, cache.alg.sigma_1)

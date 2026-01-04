@@ -3,10 +3,10 @@
 pages = [
     "index.md",
     "API Reference" => [
-        "Native Functionalities" => "api/native.md"
+        "Native Functionalities" => "api/native.md",
     ],
     "Wrapped Algorithms API" => [
-        "LineSearches.jl" => "api/line_searches.md"
+        "LineSearches.jl" => "api/line_searches.md",
     ],
-    "References" => "references.md"
+    "References" => "references.md",
 ]
