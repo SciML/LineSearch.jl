@@ -30,9 +30,11 @@ be specified if analytic jacobian/jvp/vjp is not available.
     maxiters::Int
 end
 
-function BackTracking(; autodiff = nothing, c_1 = 1e-4, ρ_hi = 0.5, ρ_lo = 0.1,
+function BackTracking(;
+        autodiff = nothing, c_1 = 1.0e-4, ρ_hi = 0.5, ρ_lo = 0.1,
         order::Union{Int, Val{2}, Val{3}} = 3, maxstep = Inf,
-        initial_alpha = true, maxiters::Int = 1_000)
+        initial_alpha = true, maxiters::Int = 1_000
+    )
     order = order isa Val ? order : Val(order)
     @assert order isa Val{2} || order isa Val{3}
     return BackTracking(autodiff, c_1, ρ_hi, ρ_lo, order, maxstep, initial_alpha, maxiters)
@@ -55,7 +57,8 @@ end
 
 function CommonSolve.init(
         prob::AbstractNonlinearProblem, alg::BackTracking, fu, u;
-        stats::Union{SciMLBase.NLStats, Nothing} = nothing, autodiff = nothing, kwargs...)
+        stats::Union{SciMLBase.NLStats, Nothing} = nothing, autodiff = nothing, kwargs...
+    )
     T = promote_type(eltype(fu), eltype(u))
     autodiff = autodiff !== nothing ? autodiff : alg.autodiff
 
@@ -64,16 +67,20 @@ function CommonSolve.init(
     @bb u_cache = similar(u)
     @bb fu_cache = similar(fu)
 
-    ϕ = @closure (f, p, u, du, α, u_cache,
-        fu_cache) -> begin
+    ϕ = @closure (
+        f, p, u, du, α, u_cache,
+        fu_cache,
+    ) -> begin
         @bb @. u_cache = u + α * du
         fu_cache = evaluate_f!!(f, fu_cache, u_cache, p)
         add_nf!(stats)
         return @fastmath norm(fu_cache)^2 / 2
     end
 
-    ϕdϕ = @closure (f, p, u, du, α, u_cache, fu_cache,
-        deriv_op) -> begin
+    ϕdϕ = @closure (
+        f, p, u, du, α, u_cache, fu_cache,
+        deriv_op,
+    ) -> begin
         @bb @. u_cache = u + α * du
         fu_cache = evaluate_f!!(f, fu_cache, u_cache, p)
         add_nf!(stats)
@@ -87,14 +94,16 @@ function CommonSolve.init(
 
     return BackTrackingCache(
         prob.f, prob.p, ϕ, ϕdϕ, T(alpha), T(alg.initial_alpha), deriv_op,
-        u_cache, fu_cache, stats, alg, alg.maxiters)
+        u_cache, fu_cache, stats, alg, alg.maxiters
+    )
 end
 
 function CommonSolve.solve!(cache::BackTrackingCache, u, du)
     T = promote_type(eltype(du), eltype(u))
     ϕ = @closure α -> cache.ϕ(cache.f, cache.p, u, du, α, cache.u_cache, cache.fu_cache)
     ϕdϕ = @closure α -> cache.ϕdϕ(
-        cache.f, cache.p, u, du, α, cache.u_cache, cache.fu_cache, cache.deriv_op)
+        cache.f, cache.p, u, du, α, cache.u_cache, cache.fu_cache, cache.deriv_op
+    )
 
     ϕ₀, dϕ₀ = ϕdϕ(zero(T))
     α₁, α₂ = cache.alpha, cache.alpha
@@ -134,12 +143,14 @@ function CommonSolve.solve!(cache::BackTrackingCache, u, du)
 end
 
 @inline function compute_alpha_backtracking(
-        ::Val{2}, ::Type{T}, dϕ₀, ϕ₀, _, ϕx₁, _, α₂) where {T}
+        ::Val{2}, ::Type{T}, dϕ₀, ϕ₀, _, ϕx₁, _, α₂
+    ) where {T}
     return -(dϕ₀ * α₂^2) / (2 * (ϕx₁ - ϕ₀ - dϕ₀ * α₂))
 end
 
 @inline function compute_alpha_backtracking(
-        ::Val{3}, ::Type{T}, dϕ₀, ϕ₀, ϕx₀, ϕx₁, α₁, α₂) where {T}
+        ::Val{3}, ::Type{T}, dϕ₀, ϕ₀, ϕx₀, ϕx₁, α₁, α₂
+    ) where {T}
     div = inv(α₁^2 * α₂^2 * (α₂ - α₁))
 
     a₁ = α₁^2 * (ϕx₁ - ϕ₀ - dϕ₀ * α₂)
@@ -151,7 +162,8 @@ end
 end
 
 function SciMLBase.reinit!(
-        cache::BackTrackingCache; p = missing, stats = missing, kwargs...)
+        cache::BackTrackingCache; p = missing, stats = missing, kwargs...
+    )
     p !== missing && (cache.p = p)
     stats !== missing && (cache.stats = stats)
     cache.alpha = cache.initial_alpha

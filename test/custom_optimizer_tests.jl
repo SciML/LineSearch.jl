@@ -3,7 +3,8 @@
 using LinearAlgebra, SciMLBase, LineSearch, SciMLJacobianOperators
 
 function gradient_descent(
-        prob, alg; g_atol::Real = 1e-5, maxiters::Int = 10000, autodiff = nothing)
+        prob, alg; g_atol::Real = 1.0e-5, maxiters::Int = 10000, autodiff = nothing
+    )
     u = copy(prob.u0)
     if SciMLBase.isinplace(prob)
         fu = similar(u)
@@ -48,7 +49,7 @@ export gradient_descent
 
 end
 
-@testitem "LineSearches.jl: Custom Optimizer" setup=[CustomOptimizer] begin
+@testitem "LineSearches.jl: Custom Optimizer" setup = [CustomOptimizer] begin
     using LineSearches, SciMLBase
     using ADTypes, Tracker, ForwardDiff, Zygote, Enzyme, ReverseDiff, FiniteDiff
 
@@ -57,20 +58,20 @@ end
         nlp = NonlinearProblem(nlf, [-1.0, 1.0], [1.0])
 
         @testset for autodiff in (
-            AutoTracker(), AutoForwardDiff(), AutoZygote(),
-            AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff()
-        )
-            @testset "method: $(nameof(typeof(method)))" for method in (
-                LineSearches.BackTracking(; order = 3),
-                StrongWolfe(),
-                HagerZhang(),
-                MoreThuente()
+                AutoTracker(), AutoForwardDiff(), AutoZygote(),
+                AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
             )
+            @testset "method: $(nameof(typeof(method)))" for method in (
+                    LineSearches.BackTracking(; order = 3),
+                    StrongWolfe(),
+                    HagerZhang(),
+                    MoreThuente(),
+                )
                 linesearch = LineSearchesJL(; method, autodiff)
                 fu, u, iter, alphas = gradient_descent(nlp, linesearch; autodiff)
 
-                @test fu≈[0.0, 0.0] atol=1e-2
-                @test u≈[1.0, 1.0] atol=1e-2
+                @test fu ≈ [0.0, 0.0] atol = 1.0e-2
+                @test u ≈ [1.0, 1.0] atol = 1.0e-2
                 @test !all(isone, alphas)
             end
         end
@@ -81,26 +82,26 @@ end
         nlp = NonlinearProblem(nlf, [-1.0, 1.0], [1.0])
 
         @testset for autodiff in (
-            AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff()
-        )
-            @testset "method: $(nameof(typeof(method)))" for method in (
-                LineSearches.BackTracking(; order = 3),
-                StrongWolfe(),
-                HagerZhang(),
-                MoreThuente()
+                AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
             )
+            @testset "method: $(nameof(typeof(method)))" for method in (
+                    LineSearches.BackTracking(; order = 3),
+                    StrongWolfe(),
+                    HagerZhang(),
+                    MoreThuente(),
+                )
                 linesearch = LineSearchesJL(; method, autodiff)
                 fu, u, iter, alphas = gradient_descent(nlp, linesearch; autodiff)
 
-                @test fu≈[0.0, 0.0] atol=1e-2
-                @test u≈[1.0, 1.0] atol=1e-2
+                @test fu ≈ [0.0, 0.0] atol = 1.0e-2
+                @test u ≈ [1.0, 1.0] atol = 1.0e-2
                 @test !all(isone, alphas)
             end
         end
     end
 end
 
-@testitem "Native Line Search: Custom Optimizer" setup=[CustomOptimizer] begin
+@testitem "Native Line Search: Custom Optimizer" setup = [CustomOptimizer] begin
     using SciMLBase
     using ADTypes, Tracker, ForwardDiff, Zygote, Enzyme, ReverseDiff, FiniteDiff
 
@@ -109,19 +110,19 @@ end
         nlp = NonlinearProblem(nlf, [-1.0, 1.0], [1.0])
 
         @testset for autodiff in (
-            AutoTracker(), AutoForwardDiff(), AutoZygote(),
-            AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff()
-        )
-            @testset "method: $(nameof(typeof(method)))" for method in (
-                LiFukushimaLineSearch(),
-                NoLineSearch(0.001),
-                BackTracking(; order = Val(3), autodiff),
-                BackTracking(; order = Val(2), autodiff)
+                AutoTracker(), AutoForwardDiff(), AutoZygote(),
+                AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
             )
+            @testset "method: $(nameof(typeof(method)))" for method in (
+                    LiFukushimaLineSearch(),
+                    NoLineSearch(0.001),
+                    BackTracking(; order = Val(3), autodiff),
+                    BackTracking(; order = Val(2), autodiff),
+                )
                 fu, u, iter, alphas = gradient_descent(nlp, method; autodiff)
 
-                @test fu≈[0.0, 0.0] atol=1e-1
-                @test u≈[1.0, 1.0] atol=1e-1
+                @test fu ≈ [0.0, 0.0] atol = 1.0e-1
+                @test u ≈ [1.0, 1.0] atol = 1.0e-1
                 @test !all(isone, alphas)
             end
         end
@@ -132,18 +133,18 @@ end
         nlp = NonlinearProblem(nlf, [-1.0, 1.0], [1.0])
 
         @testset for autodiff in (
-            AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff()
-        )
-            @testset "method: $(nameof(typeof(method)))" for method in (
-                LiFukushimaLineSearch(),
-                NoLineSearch(0.001),
-                BackTracking(; order = Val(3), autodiff),
-                BackTracking(; order = Val(2), autodiff)
+                AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
             )
+            @testset "method: $(nameof(typeof(method)))" for method in (
+                    LiFukushimaLineSearch(),
+                    NoLineSearch(0.001),
+                    BackTracking(; order = Val(3), autodiff),
+                    BackTracking(; order = Val(2), autodiff),
+                )
                 fu, u, iter, alphas = gradient_descent(nlp, method; autodiff)
 
-                @test fu≈[0.0, 0.0] atol=1e-1
-                @test u≈[1.0, 1.0] atol=1e-1
+                @test fu ≈ [0.0, 0.0] atol = 1.0e-1
+                @test u ≈ [1.0, 1.0] atol = 1.0e-1
                 @test !all(isone, alphas)
             end
         end

@@ -58,30 +58,37 @@ end
 function CommonSolve.init(
         prob::AbstractNonlinearProblem, alg::LiFukushimaLineSearch,
         fu::Union{SArray, Number}, u::Union{SArray, Number};
-        stats::Union{SciMLBase.NLStats, Nothing} = nothing, kwargs...)
+        stats::Union{SciMLBase.NLStats, Nothing} = nothing, kwargs...
+    )
     if (alg.nan_maxiters === nothing || alg.nan_maxiters === missing) && stats === nothing
         T = promote_type(eltype(fu), eltype(u))
-        return StaticLiFukushimaLineSearchCache(prob.f, prob.p, T(alg.lambda_0),
+        return StaticLiFukushimaLineSearchCache(
+            prob.f, prob.p, T(alg.lambda_0),
             T(alg.beta), T(alg.sigma_1), T(alg.sigma_2), T(alg.eta), T(alg.rho),
-            alg.maxiters)
+            alg.maxiters
+        )
     end
     return generic_lifukushima_init(prob, alg, fu, u; stats, kwargs...)
 end
 
 function CommonSolve.init(
-        prob::AbstractNonlinearProblem, alg::LiFukushimaLineSearch, fu, u; kwargs...)
+        prob::AbstractNonlinearProblem, alg::LiFukushimaLineSearch, fu, u; kwargs...
+    )
     return generic_lifukushima_init(prob, alg, fu, u; kwargs...)
 end
 
 function generic_lifukushima_init(
         prob::AbstractNonlinearProblem, alg::LiFukushimaLineSearch,
-        fu, u; stats::Union{SciMLBase.NLStats, Nothing} = nothing, kwargs...)
+        fu, u; stats::Union{SciMLBase.NLStats, Nothing} = nothing, kwargs...
+    )
     @bb u_cache = similar(u)
     @bb fu_cache = similar(fu)
     T = promote_type(eltype(fu), eltype(u))
 
-    ϕ = @closure (f, p, u, du, α, u_cache,
-        fu_cache) -> begin
+    ϕ = @closure (
+        f, p, u, du, α, u_cache,
+        fu_cache,
+    ) -> begin
         @bb @. u_cache = u + α * du
         fu_cache = evaluate_f!!(f, fu_cache, u_cache, p)
         add_nf!(stats)
@@ -91,7 +98,8 @@ function generic_lifukushima_init(
     return LiFukushimaLineSearchCache(
         ϕ, prob.f, prob.p, u_cache, fu_cache, T(alg.lambda_0), T(alg.beta),
         T(alg.sigma_1), T(alg.sigma_2), T(alg.eta), T(alg.rho), T(1), alg.nan_maxiters,
-        alg.maxiters, stats, alg)
+        alg.maxiters, stats, alg
+    )
 end
 
 function CommonSolve.solve!(cache::LiFukushimaLineSearchCache, u, du)
@@ -107,13 +115,14 @@ function CommonSolve.solve!(cache::LiFukushimaLineSearchCache, u, du)
     du_norm = norm(du)
     fxλ_norm = ϕ(cache.α)
     fxλ_norm ≤ cache.ρ * fx_norm - cache.σ₂ * du_norm^2 && return LineSearchSolution(
-        cache.α, ReturnCode.Success)
+        cache.α, ReturnCode.Success
+    )
 
     λ₂, λ₁ = cache.λ₀, cache.λ₀
     fxλp_norm = ϕ(λ₂)
 
     if !isfinite(fxλp_norm) && cache.nan_maxiters !== nothing &&
-       cache.nan_maxiters !== missing
+            cache.nan_maxiters !== missing
         nan_converged = false
         for _ in 1:(cache.nan_maxiters)
             λ₁, λ₂ = λ₂, cache.β * λ₂
@@ -158,7 +167,8 @@ function CommonSolve.solve!(cache::StaticLiFukushimaLineSearchCache, u, du)
 end
 
 function SciMLBase.reinit!(
-        cache::LiFukushimaLineSearchCache; p = missing, stats = missing, kwargs...)
+        cache::LiFukushimaLineSearchCache; p = missing, stats = missing, kwargs...
+    )
     p !== missing && (cache.p = p)
     stats !== missing && (cache.stats = stats)
     cache.α = oftype(cache.α, true)

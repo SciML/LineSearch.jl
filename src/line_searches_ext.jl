@@ -22,7 +22,7 @@ differentiation for fast VJPs or JVPs.
     to `1`).
 """
 struct LineSearchesJL{M, A, AD <: Union{Nothing, ADTypes.AbstractADType}} <:
-       AbstractLineSearchAlgorithm
+    AbstractLineSearchAlgorithm
     method::M
     initial_alpha::A
     autodiff::AD
@@ -33,7 +33,8 @@ struct LineSearchesJL{M, A, AD <: Union{Nothing, ADTypes.AbstractADType}} <:
                    `using LineSearches`")
         end
         return new{typeof(method), typeof(initial_alpha), typeof(autodiff)}(
-            method, initial_alpha, autodiff)
+            method, initial_alpha, autodiff
+        )
     end
 end
 
@@ -58,7 +59,8 @@ end
 # user explicitly requests it.
 function CommonSolve.init(
         prob::AbstractNonlinearProblem, alg::LineSearchesJL, fu, u;
-        stats::Union{SciMLBase.NLStats, Nothing} = nothing, autodiff = nothing, kwargs...)
+        stats::Union{SciMLBase.NLStats, Nothing} = nothing, autodiff = nothing, kwargs...
+    )
     T = promote_type(eltype(fu), eltype(u))
     autodiff = autodiff !== nothing ? autodiff : alg.autodiff
 
@@ -67,24 +69,30 @@ function CommonSolve.init(
     @bb u_cache = similar(u)
     @bb fu_cache = similar(fu)
 
-    ϕ = @closure (f, p, u, du, α, u_cache,
-        fu_cache) -> begin
+    ϕ = @closure (
+        f, p, u, du, α, u_cache,
+        fu_cache,
+    ) -> begin
         @bb @. u_cache = u + α * du
         fu_cache = evaluate_f!!(f, fu_cache, u_cache, p)
         add_nf!(stats)
         return @fastmath norm(fu_cache)^2 / 2
     end
 
-    dϕ = @closure (f, p, u, du, α, u_cache, fu_cache,
-        deriv_op) -> begin
+    dϕ = @closure (
+        f, p, u, du, α, u_cache, fu_cache,
+        deriv_op,
+    ) -> begin
         @bb @. u_cache = u + α * du
         fu_cache = evaluate_f!!(f, fu_cache, u_cache, p)
         add_nf!(stats)
         return deriv_op(du, u_cache, fu_cache, p)
     end
 
-    ϕdϕ = @closure (f, p, u, du, α, u_cache, fu_cache,
-        deriv_op) -> begin
+    ϕdϕ = @closure (
+        f, p, u, du, α, u_cache, fu_cache,
+        deriv_op,
+    ) -> begin
         @bb @. u_cache = u + α * du
         fu_cache = evaluate_f!!(f, fu_cache, u_cache, p)
         add_nf!(stats)
@@ -95,15 +103,18 @@ function CommonSolve.init(
 
     return LineSearchesJLCache(
         prob.f, prob.p, ϕ, dϕ, ϕdϕ, alg.method, T(alg.initial_alpha), T(alg.initial_alpha),
-        deriv_op, u_cache, fu_cache, stats, alg)
+        deriv_op, u_cache, fu_cache, stats, alg
+    )
 end
 
 function CommonSolve.solve!(cache::LineSearchesJLCache, u, du)
     ϕ = @closure α -> cache.ϕ(cache.f, cache.p, u, du, α, cache.u_cache, cache.fu_cache)
     dϕ = @closure α -> cache.dϕ(
-        cache.f, cache.p, u, du, α, cache.u_cache, cache.fu_cache, cache.deriv_op)
+        cache.f, cache.p, u, du, α, cache.u_cache, cache.fu_cache, cache.deriv_op
+    )
     ϕdϕ = @closure α -> cache.ϕdϕ(
-        cache.f, cache.p, u, du, α, cache.u_cache, cache.fu_cache, cache.deriv_op)
+        cache.f, cache.p, u, du, α, cache.u_cache, cache.fu_cache, cache.deriv_op
+    )
 
     ϕ₀, dϕ₀ = ϕdϕ(zero(eltype(u)))
 
@@ -118,7 +129,8 @@ function CommonSolve.solve!(cache::LineSearchesJLCache, u, du)
 end
 
 function SciMLBase.reinit!(
-        cache::LineSearchesJLCache; p = missing, stats = missing, kwargs...)
+        cache::LineSearchesJLCache; p = missing, stats = missing, kwargs...
+    )
     p !== missing && (cache.p = p)
     stats !== missing && (cache.stats = stats)
     cache.alpha = cache.initial_alpha
