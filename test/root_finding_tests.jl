@@ -78,14 +78,25 @@ end
     using LineSearches, SciMLBase
     using ADTypes, Tracker, ForwardDiff, Zygote, Enzyme, ReverseDiff, FiniteDiff
 
+    # Enzyme is exempted from Julia v1 (stable) testing
+    const ENZYME_COMPAT = VERSION >= v"1.11"
+
     @testset "OOP Problem" begin
         nlf(x, p) = x .^ 2 .- p
         nlp = NonlinearProblem(nlf, [-1.0, 1.0], [3.0])
 
-        @testset for autodiff in (
+        autodiffs_oop = if ENZYME_COMPAT
+            (
                 AutoTracker(), AutoForwardDiff(), AutoZygote(),
                 AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
             )
+        else
+            (
+                AutoTracker(), AutoForwardDiff(), AutoZygote(),
+                AutoReverseDiff(), AutoFiniteDiff(),
+            )
+        end
+        @testset for autodiff in autodiffs_oop
             @testset "method: $(nameof(typeof(method)))" for method in (
                     LineSearches.BackTracking(; order = 3),
                     StrongWolfe(),
@@ -106,9 +117,12 @@ end
         nlf(dx, x, p) = (dx .= x .^ 2 .- p)
         nlp = NonlinearProblem(nlf, [-1.0, 1.0], [3.0])
 
-        @testset for autodiff in (
-                AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
-            )
+        autodiffs_iip = if ENZYME_COMPAT
+            (AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff())
+        else
+            (AutoForwardDiff(), AutoReverseDiff(), AutoFiniteDiff())
+        end
+        @testset for autodiff in autodiffs_iip
             @testset "method: $(nameof(typeof(method)))" for method in (
                     LineSearches.BackTracking(; order = 3),
                     StrongWolfe(),
@@ -130,6 +144,9 @@ end
     using SciMLBase
     using ADTypes, Tracker, ForwardDiff, Zygote, Enzyme, ReverseDiff, FiniteDiff
 
+    # Enzyme is exempted from Julia v1 (stable) testing
+    const ENZYME_COMPAT = VERSION >= v"1.11"
+
     @testset "OOP Problem" begin
         nlf(x, p) = x .^ 2 .- p
         nlp = NonlinearProblem(nlf, [-1.0, 1.0], [3.0])
@@ -144,10 +161,18 @@ end
             @test abs.(u) ≈ sqrt.([3.0, 3.0]) atol = 1.0e-1
         end
 
-        @testset for autodiff in (
+        autodiffs_oop = if ENZYME_COMPAT
+            (
                 AutoTracker(), AutoForwardDiff(), AutoZygote(),
                 AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
             )
+        else
+            (
+                AutoTracker(), AutoForwardDiff(), AutoZygote(),
+                AutoReverseDiff(), AutoFiniteDiff(),
+            )
+        end
+        @testset for autodiff in autodiffs_oop
             @testset "method: $(nameof(typeof(method)))" for method in (
                     BackTracking(; order = Val(3), autodiff),
                     BackTracking(; order = Val(2), autodiff),
@@ -174,9 +199,12 @@ end
             @test abs.(u) ≈ sqrt.([3.0, 3.0]) atol = 1.0e-1
         end
 
-        @testset for autodiff in (
-                AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
-            )
+        autodiffs_iip = if ENZYME_COMPAT
+            (AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff())
+        else
+            (AutoForwardDiff(), AutoReverseDiff(), AutoFiniteDiff())
+        end
+        @testset for autodiff in autodiffs_iip
             @testset "method: $(nameof(typeof(method)))" for method in (
                     BackTracking(; order = Val(3), autodiff),
                     BackTracking(; order = Val(2), autodiff),
