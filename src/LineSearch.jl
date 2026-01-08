@@ -39,4 +39,6 @@ export BackTracking
 export NoLineSearch, LiFukushimaLineSearch, RobustNonMonotoneLineSearch
 export LineSearchesJL
 
+include("precompilation.jl")
+
 end
