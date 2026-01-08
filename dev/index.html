@@ -3,8 +3,8 @@
 Pkg.add(&quot;LineSearch&quot;)</code></pre><h2 id="Contributing"><a class="docs-heading-anchor" href="#Contributing">Contributing</a><a id="Contributing-1"></a><a class="docs-heading-anchor-permalink" href="#Contributing" title="Permalink"></a></h2><ul><li><p>Please refer to the <a href="https://github.com/SciML/ColPrac/blob/master/README.md">SciML ColPrac: Contributor&#39;s Guide on Collaborative Practices for Community Packages</a> for guidance on PRs, issues, and other matters relating to contributing to SciML.</p></li><li><p>See the <a href="https://github.com/SciML/SciMLStyle">SciML Style Guide</a> for common coding practices and other style decisions.</p></li><li><p>There are a few community forums:</p><ul><li>The #diffeq-bridged and #sciml-bridged channels in the <a href="https://julialang.org/slack/">Julia Slack</a></li><li>The #diffeq-bridged and #sciml-bridged channels in the <a href="https://julialang.zulipchat.com/#narrow/stream/279055-sciml-bridged">Julia Zulip</a></li><li>On the <a href="https://discourse.julialang.org">Julia Discourse forums</a></li><li>See also <a href="https://sciml.ai/community/">SciML Community page</a></li></ul></li></ul><h2 id="Reproducibility"><a class="docs-heading-anchor" href="#Reproducibility">Reproducibility</a><a id="Reproducibility-1"></a><a class="docs-heading-anchor-permalink" href="#Reproducibility" title="Permalink"></a></h2><details><summary>The documentation of this SciML package was built using these direct dependencies,</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr32"><span class="sgr1">Status</span></span> `~/work/LineSearch.jl/LineSearch.jl/docs/Project.toml`
   <span class="sgr90">[e30172f5] </span>Documenter v1.16.1
   <span class="sgr90">[daee34ce] </span>DocumenterCitations v1.4.1
-  <span class="sgr90">[87fe0de2] </span>LineSearch v0.1.5 `~/work/LineSearch.jl/LineSearch.jl`</code></pre></details><details><summary>and using this machine and Julia version.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Julia Version 1.12.3
-Commit 966d0af0fdf (2025-12-15 11:20 UTC)
+  <span class="sgr90">[87fe0de2] </span>LineSearch v0.1.5 `~/work/LineSearch.jl/LineSearch.jl`</code></pre></details><details><summary>and using this machine and Julia version.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Julia Version 1.12.4
+Commit 01a2eadb047 (2026-01-06 16:56 UTC)
 Build Info:
   Official https://julialang.org release
 Platform Info:
@@ -61,16 +61,16 @@ Environment:
   <span class="sgr90">[2e0e35c7] </span>Moshi v0.3.7
   <span class="sgr90">[bac558e1] </span>OrderedCollections v1.8.1
   <span class="sgr90">[69de0a69] </span>Parsers v2.8.3
-<span class="sgr33">⌅</span> <span class="sgr90">[d236fae5] </span>PreallocationTools v0.4.34
+  <span class="sgr90">[d236fae5] </span>PreallocationTools v1.0.0
   <span class="sgr90">[aea7be01] </span>PrecompileTools v1.3.3
   <span class="sgr90">[21216c6a] </span>Preferences v1.5.1
   <span class="sgr90">[3cdcf5f2] </span>RecipesBase v1.3.4
-  <span class="sgr90">[731186ca] </span>RecursiveArrayTools v3.42.1
+  <span class="sgr90">[731186ca] </span>RecursiveArrayTools v3.43.0
   <span class="sgr90">[189a3867] </span>Reexport v1.2.2
   <span class="sgr90">[2792f1a3] </span>RegistryInstances v0.1.0
   <span class="sgr90">[ae029012] </span>Requires v1.3.1
   <span class="sgr90">[7e49a35a] </span>RuntimeGeneratedFunctions v0.5.16
-  <span class="sgr90">[0bca4576] </span>SciMLBase v2.131.0
+  <span class="sgr90">[0bca4576] </span>SciMLBase v2.132.0
   <span class="sgr90">[19f34311] </span>SciMLJacobianOperators v0.1.12
   <span class="sgr90">[a6db7da4] </span>SciMLLogging v1.8.0
   <span class="sgr90">[c0aeaf25] </span>SciMLOperators v1.14.1
@@ -79,7 +79,7 @@ Environment:
   <span class="sgr90">[1e83bf80] </span>StaticArraysCore v1.4.4
   <span class="sgr90">[10745b16] </span>Statistics v1.11.1
   <span class="sgr90">[69024149] </span>StringEncodings v0.3.7
-  <span class="sgr90">[ec057cc2] </span>StructUtils v2.6.0
+  <span class="sgr90">[ec057cc2] </span>StructUtils v2.6.1
   <span class="sgr90">[2efcf032] </span>SymbolicIndexingInterface v0.3.46
   <span class="sgr90">[1c621080] </span>TestItems v1.0.0
   <span class="sgr90">[3bb67fe8] </span>TranscodingStreams v0.11.3
@@ -123,12 +123,11 @@ Environment:
   <span class="sgr90">[deac9b47] </span>LibCURL_jll v8.15.0+0
   <span class="sgr90">[e37daf67] </span>LibGit2_jll v1.9.0+0
   <span class="sgr90">[29816b5a] </span>LibSSH2_jll v1.11.3+1
-  <span class="sgr90">[14a3606d] </span>MozillaCACerts_jll v2025.5.20
+  <span class="sgr90">[14a3606d] </span>MozillaCACerts_jll v2025.11.4
   <span class="sgr90">[4536629a] </span>OpenBLAS_jll v0.3.29+0
   <span class="sgr90">[458c3c95] </span>OpenSSL_jll v3.5.4+0
   <span class="sgr90">[efcefdf7] </span>PCRE2_jll v10.44.0+1
   <span class="sgr90">[83775a58] </span>Zlib_jll v1.3.1+2
   <span class="sgr90">[8e850b90] </span>libblastrampoline_jll v5.15.0+0
   <span class="sgr90">[8e850ede] </span>nghttp2_jll v1.64.0+1
-  <span class="sgr90">[3f19e933] </span>p7zip_jll v17.7.0+0
-<span class="sgr36"><span class="sgr1">Info</span></span> Packages marked with <span class="sgr33">⌅</span> have new versions available but compatibility constraints restrict them from upgrading. To see why use `status --outdated -m`</code></pre></details><p>You can also download the <a href="https://github.com/SciML/LineSearch.jl/tree/gh-pages/v0.1.5/assets/Manifest.toml">manifest</a> file and the <a href="https://github.com/SciML/LineSearch.jl/tree/gh-pages/v0.1.5/assets/Project.toml">project</a> file.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="api/native/">Native Functionalities »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Monday 5 January 2026 10:16">Monday 5 January 2026</span>. Using Julia version 1.12.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+  <span class="sgr90">[3f19e933] </span>p7zip_jll v17.7.0+0</code></pre></details><p>You can also download the <a href="https://github.com/SciML/LineSearch.jl/tree/gh-pages/v0.1.5/assets/Manifest.toml">manifest</a> file and the <a href="https://github.com/SciML/LineSearch.jl/tree/gh-pages/v0.1.5/assets/Project.toml">project</a> file.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="api/native/">Native Functionalities »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Thursday 8 January 2026 10:11">Thursday 8 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
