@@ -78,9 +78,9 @@ end
     using LineSearches, SciMLBase
     using ADTypes, Tracker, ForwardDiff, Zygote, Enzyme, ReverseDiff, FiniteDiff
 
-    # Skip Enzyme on pre-release Julia due to compatibility issues
-    const IS_PRERELEASE = occursin("-", string(VERSION))
-    const OOP_AUTODIFFS = IS_PRERELEASE ?
+    # Skip Enzyme on Julia 1.12+ due to compatibility issues (EnzymeRuntimeActivityError)
+    const SKIP_ENZYME = VERSION >= v"1.12-"
+    const OOP_AUTODIFFS = SKIP_ENZYME ?
         (
             AutoTracker(), AutoForwardDiff(), AutoZygote(),
             AutoReverseDiff(), AutoFiniteDiff(),
@@ -89,7 +89,7 @@ end
             AutoTracker(), AutoForwardDiff(), AutoZygote(),
             AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
         )
-    const IIP_AUTODIFFS = IS_PRERELEASE ?
+    const IIP_AUTODIFFS = SKIP_ENZYME ?
         (AutoForwardDiff(), AutoReverseDiff(), AutoFiniteDiff()) :
         (AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff())
 
@@ -140,9 +140,9 @@ end
     using SciMLBase
     using ADTypes, Tracker, ForwardDiff, Zygote, Enzyme, ReverseDiff, FiniteDiff
 
-    # Skip Enzyme on pre-release Julia due to compatibility issues
-    const IS_PRERELEASE = occursin("-", string(VERSION))
-    const OOP_AUTODIFFS = IS_PRERELEASE ?
+    # Skip Enzyme on Julia 1.12+ due to compatibility issues (EnzymeRuntimeActivityError)
+    const SKIP_ENZYME = VERSION >= v"1.12-"
+    const OOP_AUTODIFFS = SKIP_ENZYME ?
         (
             AutoTracker(), AutoForwardDiff(), AutoZygote(),
             AutoReverseDiff(), AutoFiniteDiff(),
@@ -151,7 +151,7 @@ end
             AutoTracker(), AutoForwardDiff(), AutoZygote(),
             AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
         )
-    const IIP_AUTODIFFS = IS_PRERELEASE ?
+    const IIP_AUTODIFFS = SKIP_ENZYME ?
         (AutoForwardDiff(), AutoReverseDiff(), AutoFiniteDiff()) :
         (AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff())
 
