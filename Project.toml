@@ -26,7 +26,6 @@ ADTypes = "1.9"
 CommonSolve = "0.2.4"
 ConcreteStructs = "0.2.3"
 DifferentiationInterface = "0.6.2, 0.7"
-Enzyme = "0.13.3"
 ExplicitImports = "1.14.0"
 FastClosures = "0.3"
 FiniteDiff = "2.24.0"
@@ -51,7 +50,6 @@ julia = "1.10"
 
 [extras]
 DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
-Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
 FiniteDiff = "6a86dc24-6348-571c-b903-95158fe2bd41"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
@@ -67,4 +65,4 @@ Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [targets]
-test = ["DifferentiationInterface", "Enzyme", "ExplicitImports", "FiniteDiff", "ForwardDiff", "Hwloc", "InteractiveUtils", "LineSearches", "NonlinearProblemLibrary", "ReTestItems", "ReverseDiff", "StaticArrays", "Test", "Tracker", "Zygote"]
+test = ["DifferentiationInterface", "ExplicitImports", "FiniteDiff", "ForwardDiff", "Hwloc", "InteractiveUtils", "LineSearches", "NonlinearProblemLibrary", "ReTestItems", "ReverseDiff", "StaticArrays", "Test", "Tracker", "Zygote"]

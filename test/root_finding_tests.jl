@@ -1,5 +1,6 @@
 # Here we write out Newton Raphson and test integration with LineSearch.jl. Main tests are
 # over at NonlinearSolve.jl and SimpleNonlinearSolve.jl
+# Note: Enzyme tests are in a separate test group (test/enzyme/)
 @testsetup module RootFinding
 
 using SciMLBase, DifferentiationInterface, ForwardDiff
@@ -76,22 +77,13 @@ end
 
 @testitem "LineSearches.jl: Newton Raphson" setup = [RootFinding] begin
     using LineSearches, SciMLBase
-    using ADTypes, Tracker, ForwardDiff, Zygote, Enzyme, ReverseDiff, FiniteDiff
+    using ADTypes, Tracker, ForwardDiff, Zygote, ReverseDiff, FiniteDiff
 
-    # Skip Enzyme on Julia 1.12+ due to compatibility issues (EnzymeRuntimeActivityError)
-    const SKIP_ENZYME = VERSION >= v"1.12-"
-    const OOP_AUTODIFFS = SKIP_ENZYME ?
-        (
-            AutoTracker(), AutoForwardDiff(), AutoZygote(),
-            AutoReverseDiff(), AutoFiniteDiff(),
-        ) :
-        (
-            AutoTracker(), AutoForwardDiff(), AutoZygote(),
-            AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
-        )
-    const IIP_AUTODIFFS = SKIP_ENZYME ?
-        (AutoForwardDiff(), AutoReverseDiff(), AutoFiniteDiff()) :
-        (AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff())
+    const OOP_AUTODIFFS = (
+        AutoTracker(), AutoForwardDiff(), AutoZygote(),
+        AutoReverseDiff(), AutoFiniteDiff(),
+    )
+    const IIP_AUTODIFFS = (AutoForwardDiff(), AutoReverseDiff(), AutoFiniteDiff())
 
     @testset "OOP Problem" begin
         nlf(x, p) = x .^ 2 .- p
@@ -138,22 +130,13 @@ end
 
 @testitem "Native Line Search: Newton Raphson" setup = [RootFinding] begin
     using SciMLBase
-    using ADTypes, Tracker, ForwardDiff, Zygote, Enzyme, ReverseDiff, FiniteDiff
+    using ADTypes, Tracker, ForwardDiff, Zygote, ReverseDiff, FiniteDiff
 
-    # Skip Enzyme on Julia 1.12+ due to compatibility issues (EnzymeRuntimeActivityError)
-    const SKIP_ENZYME = VERSION >= v"1.12-"
-    const OOP_AUTODIFFS = SKIP_ENZYME ?
-        (
-            AutoTracker(), AutoForwardDiff(), AutoZygote(),
-            AutoReverseDiff(), AutoFiniteDiff(),
-        ) :
-        (
-            AutoTracker(), AutoForwardDiff(), AutoZygote(),
-            AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
-        )
-    const IIP_AUTODIFFS = SKIP_ENZYME ?
-        (AutoForwardDiff(), AutoReverseDiff(), AutoFiniteDiff()) :
-        (AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff())
+    const OOP_AUTODIFFS = (
+        AutoTracker(), AutoForwardDiff(), AutoZygote(),
+        AutoReverseDiff(), AutoFiniteDiff(),
+    )
+    const IIP_AUTODIFFS = (AutoForwardDiff(), AutoReverseDiff(), AutoFiniteDiff())
 
     @testset "OOP Problem" begin
         nlf(x, p) = x .^ 2 .- p

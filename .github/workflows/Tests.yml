@@ -31,3 +31,26 @@ jobs:
       julia-version: "${{ matrix.version }}"
       group: "all"
     secrets: "inherit"
+
+  enzyme:
+    name: "Enzyme Tests"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - 'lts'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.version }}
+      - uses: julia-actions/cache@v2
+      - name: "Run Enzyme tests"
+        shell: julia --color=yes {0}
+        run: |
+          using Pkg
+          Pkg.activate("test/enzyme")
+          Pkg.develop(PackageSpec(path = pwd()))
+          Pkg.instantiate()
+          include("test/enzyme/runtests.jl")

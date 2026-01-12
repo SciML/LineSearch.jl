@@ -1,4 +1,5 @@
 # Test based on https://julianlsolvers.github.io/LineSearches.jl/stable/examples/generated/customoptimizer.html
+# Note: Enzyme tests are in a separate test group (test/enzyme/)
 @testsetup module CustomOptimizer
 using LinearAlgebra, SciMLBase, LineSearch, SciMLJacobianOperators
 
@@ -51,22 +52,13 @@ end
 
 @testitem "LineSearches.jl: Custom Optimizer" setup = [CustomOptimizer] begin
     using LineSearches, SciMLBase
-    using ADTypes, Tracker, ForwardDiff, Zygote, Enzyme, ReverseDiff, FiniteDiff
+    using ADTypes, Tracker, ForwardDiff, Zygote, ReverseDiff, FiniteDiff
 
-    # Skip Enzyme on Julia 1.12+ due to compatibility issues (EnzymeRuntimeActivityError)
-    const SKIP_ENZYME = VERSION >= v"1.12-"
-    const OOP_AUTODIFFS = SKIP_ENZYME ?
-        (
-            AutoTracker(), AutoForwardDiff(), AutoZygote(),
-            AutoReverseDiff(), AutoFiniteDiff(),
-        ) :
-        (
-            AutoTracker(), AutoForwardDiff(), AutoZygote(),
-            AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
-        )
-    const IIP_AUTODIFFS = SKIP_ENZYME ?
-        (AutoForwardDiff(), AutoReverseDiff(), AutoFiniteDiff()) :
-        (AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff())
+    const OOP_AUTODIFFS = (
+        AutoTracker(), AutoForwardDiff(), AutoZygote(),
+        AutoReverseDiff(), AutoFiniteDiff(),
+    )
+    const IIP_AUTODIFFS = (AutoForwardDiff(), AutoReverseDiff(), AutoFiniteDiff())
 
     @testset "OOP Problem" begin
         nlf(x, p) = [p[1] - x[1], 10.0 * (x[2] - x[1]^2)]
@@ -113,22 +105,13 @@ end
 
 @testitem "Native Line Search: Custom Optimizer" setup = [CustomOptimizer] begin
     using SciMLBase
-    using ADTypes, Tracker, ForwardDiff, Zygote, Enzyme, ReverseDiff, FiniteDiff
+    using ADTypes, Tracker, ForwardDiff, Zygote, ReverseDiff, FiniteDiff
 
-    # Skip Enzyme on Julia 1.12+ due to compatibility issues (EnzymeRuntimeActivityError)
-    const SKIP_ENZYME = VERSION >= v"1.12-"
-    const OOP_AUTODIFFS = SKIP_ENZYME ?
-        (
-            AutoTracker(), AutoForwardDiff(), AutoZygote(),
-            AutoReverseDiff(), AutoFiniteDiff(),
-        ) :
-        (
-            AutoTracker(), AutoForwardDiff(), AutoZygote(),
-            AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
-        )
-    const IIP_AUTODIFFS = SKIP_ENZYME ?
-        (AutoForwardDiff(), AutoReverseDiff(), AutoFiniteDiff()) :
-        (AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff())
+    const OOP_AUTODIFFS = (
+        AutoTracker(), AutoForwardDiff(), AutoZygote(),
+        AutoReverseDiff(), AutoFiniteDiff(),
+    )
+    const IIP_AUTODIFFS = (AutoForwardDiff(), AutoReverseDiff(), AutoFiniteDiff())
 
     @testset "OOP Problem" begin
         nlf(x, p) = [p[1] - x[1], 10.0 * (x[2] - x[1]^2)]
