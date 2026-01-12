@@ -1,8 +1,3 @@
-using Pkg
-Pkg.activate(@__DIR__)
-Pkg.develop(PackageSpec(path = dirname(dirname(@__DIR__))))
-Pkg.instantiate()
-
 using Test, LineSearch, SciMLBase, ADTypes, Enzyme
 using DifferentiationInterface, ForwardDiff, Tracker, Zygote, ReverseDiff, FiniteDiff
 using SciMLJacobianOperators, LinearAlgebra, LineSearches

@@ -47,10 +47,10 @@ jobs:
           version: ${{ matrix.version }}
       - uses: julia-actions/cache@v2
       - name: "Run Enzyme tests"
-        shell: julia --color=yes {0}
         run: |
-          using Pkg
-          Pkg.activate("test/enzyme")
-          Pkg.develop(PackageSpec(path = pwd()))
-          Pkg.instantiate()
-          include("test/enzyme/runtests.jl")
+          julia --project=test/enzyme -e '
+            using Pkg
+            Pkg.develop(PackageSpec(path = pwd()))
+            Pkg.instantiate()
+          '
+          julia --project=test/enzyme test/enzyme/runtests.jl
