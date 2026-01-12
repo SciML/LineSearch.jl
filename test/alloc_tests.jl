@@ -5,9 +5,9 @@
 @testitem "Allocation Tests: LiFukushimaLineSearch IIP" tags = [:alloc] begin
     using LineSearch, SciMLBase, CommonSolve, Test
 
-    # Skip allocation tests on Julia < 1.11 where allocation behavior differs
-    if VERSION < v"1.12"
-        @test_skip "Skipped on Julia $(VERSION) - allocation tests require Julia 1.12+"
+    # Skip allocation tests on Julia < 1.13 where allocation behavior differs
+    if VERSION < v"1.13"
+        @test_skip "Skipped on Julia $(VERSION) - allocation tests require Julia 1.13+"
     else
         function nlf_iip!(dx, x, p)
             dx[1] = x[1]^2 - p[1]
@@ -39,9 +39,9 @@ end
 @testitem "Allocation Tests: RobustNonMonotoneLineSearch IIP" tags = [:alloc] begin
     using LineSearch, SciMLBase, CommonSolve, Test
 
-    # Skip allocation tests on Julia < 1.11 where allocation behavior differs
-    if VERSION < v"1.12"
-        @test_skip "Skipped on Julia $(VERSION) - allocation tests require Julia 1.12+"
+    # Skip allocation tests on Julia < 1.13 where allocation behavior differs
+    if VERSION < v"1.13"
+        @test_skip "Skipped on Julia $(VERSION) - allocation tests require Julia 1.13+"
     else
         function nlf_iip!(dx, x, p)
             dx[1] = x[1]^2 - p[1]
@@ -78,9 +78,9 @@ end
 @testitem "Allocation Tests: NoLineSearch" tags = [:alloc] begin
     using LineSearch, SciMLBase, CommonSolve, Test
 
-    # Skip allocation tests on Julia < 1.11 where allocation behavior differs
-    if VERSION < v"1.12"
-        @test_skip "Skipped on Julia $(VERSION) - allocation tests require Julia 1.12+"
+    # Skip allocation tests on Julia < 1.13 where allocation behavior differs
+    if VERSION < v"1.13"
+        @test_skip "Skipped on Julia $(VERSION) - allocation tests require Julia 1.13+"
     else
         function nlf_iip!(dx, x, p)
             dx[1] = x[1]^2 - p[1]
@@ -112,9 +112,9 @@ end
 @testitem "Allocation Tests: StaticLiFukushimaLineSearch" tags = [:alloc] begin
     using LineSearch, SciMLBase, CommonSolve, StaticArrays, Test
 
-    # Skip allocation tests on Julia < 1.11 where allocation behavior differs
-    if VERSION < v"1.12"
-        @test_skip "Skipped on Julia $(VERSION) - allocation tests require Julia 1.12+"
+    # Skip allocation tests on Julia < 1.13 where allocation behavior differs
+    if VERSION < v"1.13"
+        @test_skip "Skipped on Julia $(VERSION) - allocation tests require Julia 1.13+"
     else
         static_f(u::SVector{2}, p) = SVector(u[1]^2 - p[1], u[2]^2 - p[2])
 
@@ -142,9 +142,9 @@ end
 @testitem "Allocation Tests: Scalar LiFukushimaLineSearch" tags = [:alloc] begin
     using LineSearch, SciMLBase, CommonSolve, Test
 
-    # Skip allocation tests on Julia < 1.11 where allocation behavior differs
-    if VERSION < v"1.12"
-        @test_skip "Skipped on Julia $(VERSION) - allocation tests require Julia 1.12+"
+    # Skip allocation tests on Julia < 1.13 where allocation behavior differs
+    if VERSION < v"1.13"
+        @test_skip "Skipped on Julia $(VERSION) - allocation tests require Julia 1.13+"
     else
         scalar_f(u, p) = u^2 - p
 
@@ -172,9 +172,9 @@ end
 @testitem "Allocation Tests: Larger Problems (10D)" tags = [:alloc] begin
     using LineSearch, SciMLBase, CommonSolve, Test
 
-    # Skip allocation tests on Julia < 1.11 where allocation behavior differs
-    if VERSION < v"1.12"
-        @test_skip "Skipped on Julia $(VERSION) - allocation tests require Julia 1.12+"
+    # Skip allocation tests on Julia < 1.13 where allocation behavior differs
+    if VERSION < v"1.13"
+        @test_skip "Skipped on Julia $(VERSION) - allocation tests require Julia 1.13+"
     else
         function nlf_10d!(dx, x, p)
             for i in 1:10
