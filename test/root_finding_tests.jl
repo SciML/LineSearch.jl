@@ -78,14 +78,26 @@ end
     using LineSearches, SciMLBase
     using ADTypes, Tracker, ForwardDiff, Zygote, Enzyme, ReverseDiff, FiniteDiff
 
+    # Skip Enzyme on pre-release Julia due to compatibility issues
+    const IS_PRERELEASE = occursin("-", string(VERSION))
+    const OOP_AUTODIFFS = IS_PRERELEASE ?
+        (
+            AutoTracker(), AutoForwardDiff(), AutoZygote(),
+            AutoReverseDiff(), AutoFiniteDiff(),
+        ) :
+        (
+            AutoTracker(), AutoForwardDiff(), AutoZygote(),
+            AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
+        )
+    const IIP_AUTODIFFS = IS_PRERELEASE ?
+        (AutoForwardDiff(), AutoReverseDiff(), AutoFiniteDiff()) :
+        (AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff())
+
     @testset "OOP Problem" begin
         nlf(x, p) = x .^ 2 .- p
         nlp = NonlinearProblem(nlf, [-1.0, 1.0], [3.0])
 
-        @testset for autodiff in (
-                AutoTracker(), AutoForwardDiff(), AutoZygote(),
-                AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
-            )
+        @testset for autodiff in OOP_AUTODIFFS
             @testset "method: $(nameof(typeof(method)))" for method in (
                     LineSearches.BackTracking(; order = 3),
                     StrongWolfe(),
@@ -106,9 +118,7 @@ end
         nlf(dx, x, p) = (dx .= x .^ 2 .- p)
         nlp = NonlinearProblem(nlf, [-1.0, 1.0], [3.0])
 
-        @testset for autodiff in (
-                AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
-            )
+        @testset for autodiff in IIP_AUTODIFFS
             @testset "method: $(nameof(typeof(method)))" for method in (
                     LineSearches.BackTracking(; order = 3),
                     StrongWolfe(),
@@ -130,6 +140,21 @@ end
     using SciMLBase
     using ADTypes, Tracker, ForwardDiff, Zygote, Enzyme, ReverseDiff, FiniteDiff
 
+    # Skip Enzyme on pre-release Julia due to compatibility issues
+    const IS_PRERELEASE = occursin("-", string(VERSION))
+    const OOP_AUTODIFFS = IS_PRERELEASE ?
+        (
+            AutoTracker(), AutoForwardDiff(), AutoZygote(),
+            AutoReverseDiff(), AutoFiniteDiff(),
+        ) :
+        (
+            AutoTracker(), AutoForwardDiff(), AutoZygote(),
+            AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
+        )
+    const IIP_AUTODIFFS = IS_PRERELEASE ?
+        (AutoForwardDiff(), AutoReverseDiff(), AutoFiniteDiff()) :
+        (AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff())
+
     @testset "OOP Problem" begin
         nlf(x, p) = x .^ 2 .- p
         nlp = NonlinearProblem(nlf, [-1.0, 1.0], [3.0])
@@ -144,10 +169,7 @@ end
             @test abs.(u) ≈ sqrt.([3.0, 3.0]) atol = 1.0e-1
         end
 
-        @testset for autodiff in (
-                AutoTracker(), AutoForwardDiff(), AutoZygote(),
-                AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
-            )
+        @testset for autodiff in OOP_AUTODIFFS
             @testset "method: $(nameof(typeof(method)))" for method in (
                     BackTracking(; order = Val(3), autodiff),
                     BackTracking(; order = Val(2), autodiff),
@@ -174,9 +196,7 @@ end
             @test abs.(u) ≈ sqrt.([3.0, 3.0]) atol = 1.0e-1
         end
 
-        @testset for autodiff in (
-                AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
-            )
+        @testset for autodiff in IIP_AUTODIFFS
             @testset "method: $(nameof(typeof(method)))" for method in (
                     BackTracking(; order = Val(3), autodiff),
                     BackTracking(; order = Val(2), autodiff),
