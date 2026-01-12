@@ -1,7 +1,7 @@
 # Allocation tests to prevent performance regressions
 # These tests verify that critical IIP (in-place) code paths remain zero-allocation
 
-@testitem "Allocation Tests: LiFukushimaLineSearch IIP" tags=[:alloc] begin
+@testitem "Allocation Tests: LiFukushimaLineSearch IIP" tags = [:alloc] begin
     using LineSearch, SciMLBase, CommonSolve, Test
 
     function nlf_iip!(dx, x, p)
@@ -31,7 +31,7 @@
     end
 end
 
-@testitem "Allocation Tests: RobustNonMonotoneLineSearch IIP" tags=[:alloc] begin
+@testitem "Allocation Tests: RobustNonMonotoneLineSearch IIP" tags = [:alloc] begin
     using LineSearch, SciMLBase, CommonSolve, Test
 
     function nlf_iip!(dx, x, p)
@@ -67,7 +67,7 @@ end
     end
 end
 
-@testitem "Allocation Tests: NoLineSearch" tags=[:alloc] begin
+@testitem "Allocation Tests: NoLineSearch" tags = [:alloc] begin
     using LineSearch, SciMLBase, CommonSolve, Test
 
     function nlf_iip!(dx, x, p)
@@ -96,7 +96,7 @@ end
     end
 end
 
-@testitem "Allocation Tests: StaticLiFukushimaLineSearch" tags=[:alloc] begin
+@testitem "Allocation Tests: StaticLiFukushimaLineSearch" tags = [:alloc] begin
     using LineSearch, SciMLBase, CommonSolve, StaticArrays, Test
 
     static_f(u::SVector{2}, p) = SVector(u[1]^2 - p[1], u[2]^2 - p[2])
@@ -107,7 +107,7 @@ end
     du = SVector(-0.5, 0.5)
 
     # Use nan_maxiters=nothing to get the static (non-allocating) path
-    alg = LiFukushimaLineSearch(; nan_maxiters=nothing)
+    alg = LiFukushimaLineSearch(; nan_maxiters = nothing)
     cache = init(prob, alg, fu, u)
 
     # Warmup
@@ -121,7 +121,7 @@ end
     end
 end
 
-@testitem "Allocation Tests: Scalar LiFukushimaLineSearch" tags=[:alloc] begin
+@testitem "Allocation Tests: Scalar LiFukushimaLineSearch" tags = [:alloc] begin
     using LineSearch, SciMLBase, CommonSolve, Test
 
     scalar_f(u, p) = u^2 - p
@@ -132,7 +132,7 @@ end
     du = -0.5
 
     # Use nan_maxiters=nothing to get the static (non-allocating) path
-    alg = LiFukushimaLineSearch(; nan_maxiters=nothing)
+    alg = LiFukushimaLineSearch(; nan_maxiters = nothing)
     cache = init(prob, alg, fu, u)
 
     # Warmup
@@ -146,7 +146,7 @@ end
     end
 end
 
-@testitem "Allocation Tests: Larger Problems (10D)" tags=[:alloc] begin
+@testitem "Allocation Tests: Larger Problems (10D)" tags = [:alloc] begin
     using LineSearch, SciMLBase, CommonSolve, Test
 
     function nlf_10d!(dx, x, p)
