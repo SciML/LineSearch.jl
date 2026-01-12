@@ -185,8 +185,8 @@ end
 
         @testset for autodiff in OOP_AUTODIFFS
             @testset "method: $(nameof(typeof(method)))" for method in (
-                    BackTracking(; order = Val(3), autodiff),
-                    BackTracking(; order = Val(2), autodiff),
+                    LineSearch.BackTracking(; order = Val(3), autodiff),
+                    LineSearch.BackTracking(; order = Val(2), autodiff),
                 )
                 fu, u, iter, alphas = gradient_descent(nlp, method; autodiff)
 
@@ -203,8 +203,8 @@ end
 
         @testset for autodiff in IIP_AUTODIFFS
             @testset "method: $(nameof(typeof(method)))" for method in (
-                    BackTracking(; order = Val(3), autodiff),
-                    BackTracking(; order = Val(2), autodiff),
+                    LineSearch.BackTracking(; order = Val(3), autodiff),
+                    LineSearch.BackTracking(; order = Val(2), autodiff),
                 )
                 fu, u, iter, alphas = gradient_descent(nlp, method; autodiff)
 
@@ -267,8 +267,8 @@ end
 
         @testset for autodiff in OOP_AUTODIFFS
             @testset "method: $(nameof(typeof(method)))" for method in (
-                    BackTracking(; order = Val(3), autodiff),
-                    BackTracking(; order = Val(2), autodiff),
+                    LineSearch.BackTracking(; order = Val(3), autodiff),
+                    LineSearch.BackTracking(; order = Val(2), autodiff),
                 )
                 converged, fu, u, iter, alphas = newton_raphson(nlp, method)
 
@@ -284,8 +284,8 @@ end
 
         @testset for autodiff in IIP_AUTODIFFS
             @testset "method: $(nameof(typeof(method)))" for method in (
-                    BackTracking(; order = Val(3), autodiff),
-                    BackTracking(; order = Val(2), autodiff),
+                    LineSearch.BackTracking(; order = Val(3), autodiff),
+                    LineSearch.BackTracking(; order = Val(2), autodiff),
                 )
                 converged, fu, u, iter, alphas = newton_raphson(nlp, method)
 
