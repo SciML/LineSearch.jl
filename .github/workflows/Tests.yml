@@ -25,7 +25,8 @@ jobs:
         version:
           - '1'
           - 'lts'
-          - 'pre'
+          # 'pre' skipped due to ReTestItems incompatibility with Julia 1.13
+          # See: https://github.com/SciML/LineSearch.jl/issues/47
     uses: "SciML/.github/.github/workflows/tests.yml@v1"
     with:
       julia-version: "${{ matrix.version }}"
