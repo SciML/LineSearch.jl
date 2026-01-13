@@ -1,5 +1,6 @@
 # Here we write out Newton Raphson and test integration with LineSearch.jl. Main tests are
 # over at NonlinearSolve.jl and SimpleNonlinearSolve.jl
+# Note: Enzyme tests are in a separate test group (test/enzyme/)
 @testsetup module RootFinding
 
 using SciMLBase, DifferentiationInterface, ForwardDiff
@@ -76,7 +77,7 @@ end
 
 @testitem "LineSearches.jl: Newton Raphson" setup = [RootFinding] begin
     using LineSearches, SciMLBase
-    using ADTypes, Tracker, ForwardDiff, Zygote, Enzyme, ReverseDiff, FiniteDiff
+    using ADTypes, Tracker, ForwardDiff, Zygote, ReverseDiff, FiniteDiff
 
     @testset "OOP Problem" begin
         nlf(x, p) = x .^ 2 .- p
@@ -84,7 +85,7 @@ end
 
         @testset for autodiff in (
                 AutoTracker(), AutoForwardDiff(), AutoZygote(),
-                AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
+                AutoReverseDiff(), AutoFiniteDiff(),
             )
             @testset "method: $(nameof(typeof(method)))" for method in (
                     LineSearches.BackTracking(; order = 3),
@@ -107,7 +108,7 @@ end
         nlp = NonlinearProblem(nlf, [-1.0, 1.0], [3.0])
 
         @testset for autodiff in (
-                AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
+                AutoForwardDiff(), AutoReverseDiff(), AutoFiniteDiff(),
             )
             @testset "method: $(nameof(typeof(method)))" for method in (
                     LineSearches.BackTracking(; order = 3),
@@ -128,7 +129,7 @@ end
 
 @testitem "Native Line Search: Newton Raphson" setup = [RootFinding] begin
     using SciMLBase
-    using ADTypes, Tracker, ForwardDiff, Zygote, Enzyme, ReverseDiff, FiniteDiff
+    using ADTypes, Tracker, ForwardDiff, Zygote, ReverseDiff, FiniteDiff
 
     @testset "OOP Problem" begin
         nlf(x, p) = x .^ 2 .- p
@@ -146,7 +147,7 @@ end
 
         @testset for autodiff in (
                 AutoTracker(), AutoForwardDiff(), AutoZygote(),
-                AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
+                AutoReverseDiff(), AutoFiniteDiff(),
             )
             @testset "method: $(nameof(typeof(method)))" for method in (
                     BackTracking(; order = Val(3), autodiff),
@@ -175,7 +176,7 @@ end
         end
 
         @testset for autodiff in (
-                AutoForwardDiff(), AutoEnzyme(), AutoReverseDiff(), AutoFiniteDiff(),
+                AutoForwardDiff(), AutoReverseDiff(), AutoFiniteDiff(),
             )
             @testset "method: $(nameof(typeof(method)))" for method in (
                     BackTracking(; order = Val(3), autodiff),

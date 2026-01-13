@@ -25,9 +25,33 @@ jobs:
         version:
           - '1'
           - 'lts'
-          - 'pre'
+          # 'pre' skipped due to ReTestItems incompatibility with Julia 1.13
+          # See: https://github.com/SciML/LineSearch.jl/issues/47
     uses: "SciML/.github/.github/workflows/tests.yml@v1"
     with:
       julia-version: "${{ matrix.version }}"
       group: "all"
     secrets: "inherit"
+
+  enzyme:
+    name: "Enzyme Tests"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - 'lts'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.version }}
+      - uses: julia-actions/cache@v2
+      - name: "Run Enzyme tests"
+        run: |
+          julia --project=test/enzyme -e '
+            using Pkg
+            Pkg.develop(PackageSpec(path = pwd()))
+            Pkg.instantiate()
+          '
+          julia --project=test/enzyme test/enzyme/runtests.jl
