@@ -18,20 +18,38 @@ concurrency:
 
 jobs:
   tests:
-    name: "Tests"
+    name: "${{ matrix.group }} - Julia ${{ matrix.version }}"
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         version:
           - '1'
           - 'lts'
-          # 'pre' skipped due to ReTestItems incompatibility with Julia 1.13
-          # See: https://github.com/SciML/LineSearch.jl/issues/47
-    uses: "SciML/.github/.github/workflows/tests.yml@v1"
-    with:
-      julia-version: "${{ matrix.version }}"
-      group: "all"
-    secrets: "inherit"
+        group:
+          - Core
+          - LineSearchesJL
+          - QA
+        exclude:
+          # QA tests only run on latest stable Julia
+          - version: 'lts'
+            group: QA
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.version }}
+      - uses: julia-actions/cache@v2
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-runtest@v1
+        env:
+          GROUP: ${{ matrix.group }}
+      - uses: julia-actions/julia-processcoverage@v1
+      - uses: codecov/codecov-action@v5
+        with:
+          files: lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
 
   enzyme:
     name: "Enzyme Tests"
@@ -42,7 +60,7 @@ jobs:
         version:
           - 'lts'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}

@@ -75,7 +75,7 @@ export newton_raphson
 
 end
 
-@testitem "LineSearches.jl: Newton Raphson" setup = [RootFinding] begin
+@testitem "LineSearches.jl: Newton Raphson" tags = [:linesearchesjl] setup = [RootFinding] begin
     using LineSearches, SciMLBase
     using ADTypes, Tracker, ForwardDiff, Zygote, ReverseDiff, FiniteDiff
 
@@ -127,7 +127,7 @@ end
     end
 end
 
-@testitem "Native Line Search: Newton Raphson" setup = [RootFinding] begin
+@testitem "Native Line Search: Newton Raphson" tags = [:core] setup = [RootFinding] begin
     using SciMLBase
     using ADTypes, Tracker, ForwardDiff, Zygote, ReverseDiff, FiniteDiff
 

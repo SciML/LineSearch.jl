@@ -50,7 +50,7 @@ export gradient_descent
 
 end
 
-@testitem "LineSearches.jl: Custom Optimizer" setup = [CustomOptimizer] begin
+@testitem "LineSearches.jl: Custom Optimizer" tags = [:linesearchesjl] setup = [CustomOptimizer] begin
     using LineSearches, SciMLBase
     using ADTypes, Tracker, ForwardDiff, Zygote, ReverseDiff, FiniteDiff
 
@@ -102,7 +102,7 @@ end
     end
 end
 
-@testitem "Native Line Search: Custom Optimizer" setup = [CustomOptimizer] begin
+@testitem "Native Line Search: Custom Optimizer" tags = [:core] setup = [CustomOptimizer] begin
     using SciMLBase
     using ADTypes, Tracker, ForwardDiff, Zygote, ReverseDiff, FiniteDiff
 
