@@ -138,6 +138,9 @@ end
         @testset "method: $(nameof(typeof(method)))" for method in (
                 LiFukushimaLineSearch(),
                 NoLineSearch(0.5),
+                RobustNonMonotoneLineSearch(),
+                RobustNonMonotoneLineSearch(; M = 1), #strictly monotonous case
+                RobustNonMonotoneLineSearch(; M = 15),
             )
             converged, fu, u, iter, alphas = newton_raphson(nlp, method)
 
@@ -168,6 +171,9 @@ end
         @testset "method: $(nameof(typeof(method)))" for method in (
                 LiFukushimaLineSearch(),
                 NoLineSearch(0.5),
+                RobustNonMonotoneLineSearch(),
+                RobustNonMonotoneLineSearch(; M = 1), #strictly monotonous case
+                RobustNonMonotoneLineSearch(; M = 15),
             )
             converged, fu, u, iter, alphas = newton_raphson(nlp, method)
 
