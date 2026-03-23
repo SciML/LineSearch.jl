@@ -38,11 +38,15 @@ function construct_jvp_or_vjp_operator(prob::AbstractNonlinearProblem, fu, u; au
                pass it to `init` as a keyword argument.")
     end
 
-    deriv_op = if jvp_op !== nothing
-        @closure (du, u, fu, p) -> dot(fu, jvp_op(du, u, p))
-    else
-        @closure (du, u, fu, p) -> dot(du, vjp_op(fu, u, p))
-    end
+    deriv_op = _get_deriv_op(jvp_op, vjp_op)
 
     return jvp_op, vjp_op, deriv_op
+end
+
+function _get_deriv_op(jvp_op, vjp_op)
+    return @closure (du, u, fu, p) -> dot(fu, jvp_op(du, u, p))
+end
+
+function _get_deriv_op(jvp_op::Nothing, vjp_op)
+    return @closure (du, u, fu, p) -> dot(du, vjp_op(fu, u, p))
 end
