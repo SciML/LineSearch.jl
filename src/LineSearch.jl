@@ -25,6 +25,7 @@ include("backtracking.jl")
 include("li_fukushima.jl")
 include("no_search.jl")
 include("robust_non_monotone.jl")
+include("strong_wolfe.jl")
 
 include("line_searches_ext.jl")
 
@@ -36,7 +37,7 @@ end
 export LineSearchSolution
 
 export BackTracking
-export NoLineSearch, LiFukushimaLineSearch, RobustNonMonotoneLineSearch
+export NoLineSearch, LiFukushimaLineSearch, RobustNonMonotoneLineSearch, StrongWolfeLineSearch
 export LineSearchesJL
 
 include("precompilation.jl")
