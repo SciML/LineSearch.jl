@@ -12,7 +12,7 @@ available.
 """
 @kwdef @concrete struct StrongWolfeLineSearch <: AbstractLineSearchAlgorithm
     autodiff = nothing
-    c1 = 1e-4
+    c1 = 1.0e-4
     c2 = 0.9
     α_init = 1.0
     maxiters::Int = 10
@@ -33,7 +33,7 @@ end
     alg <: StrongWolfeLineSearch
 end
 
-# GPU path: static cache for SArray/Number, no allocations
+# GPU path: static cache for SArray/Number
 @concrete struct StaticStrongWolfeLineSearchCache <: AbstractLineSearchCache
     f
     grad_f
@@ -92,7 +92,7 @@ end
     d1 = dϕ_lo + dϕ_hi - 3 * (ϕ_lo - ϕ_hi) / (a_lo - a_hi)
     desc = d1 * d1 - dϕ_lo * dϕ_hi
     d2 = sqrt(max(desc, zero(desc)))
-    ifelse(
+    return ifelse(
         desc < 0,
         (a_lo + a_hi) / 2,
         a_hi - (a_hi - a_lo) * ((dϕ_hi + d2 - d1) / (dϕ_hi - dϕ_lo + 2 * d2))
@@ -110,9 +110,10 @@ end
 end
 
 # N&W Algorithm 3.6 (zoom) for static path
-# uses `done` flag instead of early return for GPU kernel compatibility
-@inline function _sw_zoom_static(f, grad_f, p, u, du,
-        a_lo, a_hi, ϕ_0, dϕ_0, ϕ_lo, dϕ_lo, c1, c2, maxiters)
+@inline function _sw_zoom_static(
+        f, grad_f, p, u, du,
+        a_lo, a_hi, ϕ_0, dϕ_0, ϕ_lo, dϕ_lo, c1, c2, maxiters
+    )
     T = typeof(a_lo)
     α_out = a_lo
     ok = false
@@ -125,9 +126,11 @@ end
         if !done
             α_j = _sw_interpolate(a_lo, a_hi, ϕ_lo, ϕ_hi, dϕ_lo, dϕ_hi)
             bracket = T(0.01) * abs(a_hi - a_lo)
-            α_j = clamp(α_j,
+            α_j = clamp(
+                α_j,
                 min(a_lo, a_hi) + bracket,
-                max(a_lo, a_hi) - bracket)
+                max(a_lo, a_hi) - bracket
+            )
 
             ϕ_j, dϕ_j = _sw_phi_dphi(f, grad_f, p, u, du, α_j)
 
@@ -159,8 +162,10 @@ end
 end
 
 # N&W Algorithm 3.5 (outer search) for static path
-@inline function _sw_search_static(f, grad_f, p, u, du, ϕ_0, dϕ_0,
-        c1, c2, α_init, maxiters)
+@inline function _sw_search_static(
+        f, grad_f, p, u, du, ϕ_0, dϕ_0,
+        c1, c2, α_init, maxiters
+    )
     T = typeof(α_init)
     α_max = T(65536)
 
@@ -179,16 +184,20 @@ end
             ϕ_i, dϕ_i = _sw_phi_dphi(f, grad_f, p, u, du, α_i)
 
             if (ϕ_i > ϕ_0 + c1 * α_i * dϕ_0) || (ϕ_i >= ϕ_prev && i > 1)
-                α_z, ok_z = _sw_zoom_static(f, grad_f, p, u, du,
+                α_z, ok_z = _sw_zoom_static(
+                    f, grad_f, p, u, du,
                     α_prev, α_i, ϕ_0, dϕ_0, ϕ_prev, dϕ_prev,
-                    c1, c2, maxiters)
+                    c1, c2, maxiters
+                )
                 α_out, ok, done = α_z, ok_z, true
             elseif abs(dϕ_i) <= -c2 * dϕ_0
                 α_out, ok, done = α_i, true, true
             elseif dϕ_i >= zero(T)
-                α_z, ok_z = _sw_zoom_static(f, grad_f, p, u, du,
+                α_z, ok_z = _sw_zoom_static(
+                    f, grad_f, p, u, du,
                     α_i, α_prev, ϕ_0, dϕ_0, ϕ_i, dϕ_i,
-                    c1, c2, maxiters)
+                    c1, c2, maxiters
+                )
                 α_out, ok, done = α_z, ok_z, true
             else
                 α_prev = α_i
@@ -207,8 +216,10 @@ end
 end
 
 # N&W Algorithm 3.6 (zoom) for mutable path
-@inline function _sw_zoom(ϕdϕ, a_lo, a_hi, ϕ_0, dϕ_0,
-        ϕ_lo, dϕ_lo, c1, c2, maxiters)
+@inline function _sw_zoom(
+        ϕdϕ, a_lo, a_hi, ϕ_0, dϕ_0,
+        ϕ_lo, dϕ_lo, c1, c2, maxiters
+    )
     T = typeof(a_lo)
     α_out = a_lo
     ok = false
@@ -220,9 +231,11 @@ end
         if !done
             α_j = _sw_interpolate(a_lo, a_hi, ϕ_lo, ϕ_hi, dϕ_lo, dϕ_hi)
             bracket = T(0.01) * abs(a_hi - a_lo)
-            α_j = clamp(α_j,
+            α_j = clamp(
+                α_j,
                 min(a_lo, a_hi) + bracket,
-                max(a_lo, a_hi) - bracket)
+                max(a_lo, a_hi) - bracket
+            )
 
             ϕ_j, dϕ_j = ϕdϕ(α_j)
 
@@ -273,14 +286,18 @@ end
             ϕ_i, dϕ_i = ϕdϕ(α_i)
 
             if (ϕ_i > ϕ_0 + c1 * α_i * dϕ_0) || (ϕ_i >= ϕ_prev && i > 1)
-                α_z, ok_z = _sw_zoom(ϕdϕ, α_prev, α_i,
-                    ϕ_0, dϕ_0, ϕ_prev, dϕ_prev, c1, c2, maxiters)
+                α_z, ok_z = _sw_zoom(
+                    ϕdϕ, α_prev, α_i,
+                    ϕ_0, dϕ_0, ϕ_prev, dϕ_prev, c1, c2, maxiters
+                )
                 α_out, ok, done = α_z, ok_z, true
             elseif abs(dϕ_i) <= -c2 * dϕ_0
                 α_out, ok, done = α_i, true, true
             elseif dϕ_i >= zero(T)
-                α_z, ok_z = _sw_zoom(ϕdϕ, α_i, α_prev,
-                    ϕ_0, dϕ_0, ϕ_i, dϕ_i, c1, c2, maxiters)
+                α_z, ok_z = _sw_zoom(
+                    ϕdϕ, α_i, α_prev,
+                    ϕ_0, dϕ_0, ϕ_i, dϕ_i, c1, c2, maxiters
+                )
                 α_out, ok, done = α_z, ok_z, true
             else
                 α_prev = α_i
@@ -330,8 +347,10 @@ function CommonSolve.solve!(cache::StaticStrongWolfeLineSearchCache, u, du)
     isfinite(ϕ_0) || return LineSearchSolution(T(cache.α_init), ReturnCode.Failure)
     dϕ_0 >= zero(T) && return LineSearchSolution(T(cache.α_init), ReturnCode.Failure)
 
-    α, ok = _sw_search_static(cache.f, cache.grad_f, cache.p, u, du,
-        ϕ_0, dϕ_0, cache.c1, cache.c2, T(cache.α_init), cache.maxiters)
+    α, ok = _sw_search_static(
+        cache.f, cache.grad_f, cache.p, u, du,
+        ϕ_0, dϕ_0, cache.c1, cache.c2, T(cache.α_init), cache.maxiters
+    )
 
     ok && return LineSearchSolution(α, ReturnCode.Success)
     return LineSearchSolution(T(cache.α_init), ReturnCode.Failure)

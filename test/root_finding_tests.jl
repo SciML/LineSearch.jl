@@ -140,7 +140,7 @@ end
                 NoLineSearch(0.5),
                 GoldenSection(; tol = 1.0e-4),
                 RobustNonMonotoneLineSearch(),
-                RobustNonMonotoneLineSearch(; M = 1),
+                RobustNonMonotoneLineSearch(; M = 1), #strictly monotonous case
                 RobustNonMonotoneLineSearch(; M = 15),
             )
             converged, fu, u, iter, alphas = newton_raphson(nlp, method)
@@ -175,7 +175,7 @@ end
                 NoLineSearch(0.5),
                 GoldenSection(; tol = 1.0e-4),
                 RobustNonMonotoneLineSearch(),
-                RobustNonMonotoneLineSearch(; M = 1),
+                RobustNonMonotoneLineSearch(; M = 1), #strictly monotonous case
                 RobustNonMonotoneLineSearch(; M = 15),
             )
             converged, fu, u, iter, alphas = newton_raphson(nlp, method)
