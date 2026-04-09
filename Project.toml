@@ -1,6 +1,6 @@
 name = "LineSearch"
 uuid = "87fe0de2-c867-4266-b59a-2f0a94fc965b"
-version = "0.1.6"
+version = "0.2.0"
 authors = ["SciML"]
 
 [deps]
@@ -39,7 +39,7 @@ NonlinearProblemLibrary = "0.1.2"
 PrecompileTools = "1"
 ReTestItems = "1.28.0"
 ReverseDiff = "1.15.3"
-SciMLBase = "2.53.1"
+SciMLBase = "2.53.1, 3"
 SciMLJacobianOperators = "0.1"
 StaticArraysCore = "1.4"
 Test = "1.10"
