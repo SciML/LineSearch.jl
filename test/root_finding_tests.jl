@@ -138,6 +138,7 @@ end
         @testset "method: $(nameof(typeof(method)))" for method in (
                 LiFukushimaLineSearch(),
                 NoLineSearch(0.5),
+                GoldenSection(; tol = 1e-4),
             )
             converged, fu, u, iter, alphas = newton_raphson(nlp, method)
 
@@ -168,6 +169,7 @@ end
         @testset "method: $(nameof(typeof(method)))" for method in (
                 LiFukushimaLineSearch(),
                 NoLineSearch(0.5),
+                GoldenSection(; tol = 1e-4),
             )
             converged, fu, u, iter, alphas = newton_raphson(nlp, method)
 
