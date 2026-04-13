@@ -117,7 +117,7 @@ end
             @testset "method: $(nameof(typeof(method)))" for method in (
                     LiFukushimaLineSearch(),
                     NoLineSearch(0.001),
-                    GoldenSection(; tol = 1e-4),
+                    GoldenSection(; tol = 1.0e-4),
                     BackTracking(; order = Val(3), autodiff),
                     BackTracking(; order = Val(2), autodiff),
                 )
@@ -140,7 +140,7 @@ end
             @testset "method: $(nameof(typeof(method)))" for method in (
                     LiFukushimaLineSearch(),
                     NoLineSearch(0.001),
-                    GoldenSection(; tol = 1e-4),
+                    GoldenSection(; tol = 1.0e-4),
                     BackTracking(; order = Val(3), autodiff),
                     BackTracking(; order = Val(2), autodiff),
                 )
