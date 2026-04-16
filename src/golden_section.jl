@@ -1,48 +1,79 @@
 """
-    GoldenSection()
+    GoldenSection(; tol = 1e-7, maxiters = 100)
 
-A derivative-free line search method that minimizes a unimodal function by 
-successively narrowing the range of values inside which the local minimum must lie.
+A derivative-free line search that minimizes a unimodal function by successively 
+narrowing the interval containing the minimum using the golden ratio.
 """
-struct GoldenSection{T<:AbstractFloat}
-    tol::T
-    maxiter::Int
+@kwdef @concrete struct GoldenSection <: AbstractLineSearchAlgorithm
+    tol = 1e-7
+    maxiters::Int = 100
 end
 
-GoldenSection(; tol=1e-7, maxiter=100) = GoldenSection(tol, maxiter)
+@concrete mutable struct GoldenSectionCache <: AbstractLineSearchCache
+    ϕ
+    f
+    p
+    u_cache
+    fu_cache
+    α
+    stats <: Union{SciMLBase.NLStats, Nothing}
+    alg <: GoldenSection
+    maxiters::Int
+end
 
-function (gs::GoldenSection)(f, x, d, α_initial, f_x, g_x)
-    T = typeof(α_initial)
+function CommonSolve.init(
+        prob::AbstractNonlinearProblem, alg::GoldenSection, fu, u;
+        stats::Union{SciMLBase.NLStats, Nothing} = nothing, kwargs...
+    )
+    T = promote_type(eltype(fu), eltype(u))
 
-    xc = similar(x)
-    ϕ(α) = (@. xc = x + α * d; f(xc))
+    @bb u_cache = similar(u)
+    @bb fu_cache = similar(fu)
 
-    a = T(0)
-    b = α_initial          
+    ϕ = @closure (f, p, u, du, α, u_cache, fu_cache) -> begin
+        @bb @. u_cache = u + α * du
+        fu_cache = evaluate_f!!(f, fu_cache, u_cache, p)
+        add_nf!(stats)
+        return @fastmath norm(fu_cache)^2 / 2
+    end
 
+    return GoldenSectionCache(
+        ϕ, prob.f, prob.p, u_cache, fu_cache, T(1), stats, alg, alg.maxiters
+    )
+end
+
+function CommonSolve.solve!(cache::GoldenSectionCache, u, du)
+    T = promote_type(eltype(du), eltype(u))
+    ϕ = @closure α -> cache.ϕ(cache.f, cache.p, u, du, α, cache.u_cache, cache.fu_cache)
+
+    a, b = zero(T), T(cache.α)
     φ = (sqrt(T(5)) + 1) / 2
-    resphi = 2 - φ
+    resphi = 2 - φ  # ≈ 0.382
 
     x1 = a + resphi * (b - a)
     x2 = b - resphi * (b - a)
-    f1 = ϕ(x1)
-    f2 = ϕ(x2)
+    f1, f2 = ϕ(x1), ϕ(x2)
 
-    iter = 0
-    while abs(b - a) > gs.tol && iter < gs.maxiter
-        iter += 1
+    for _ in 1:(cache.maxiters)
+        abs(b - a) ≤ cache.alg.tol && break
         if f1 < f2
             b = x2;  x2 = x1;  f2 = f1
-            x1 = a + resphi * (b - a)
-            f1 = ϕ(x1)
+            x1 = a + resphi * (b - a);  f1 = ϕ(x1)
         else
             a = x1;  x1 = x2;  f1 = f2
-            x2 = b - resphi * (b - a)
-            f2 = ϕ(x2)
+            x2 = b - resphi * (b - a);  f2 = ϕ(x2)
         end
     end
 
     α_best = (a + b) / 2
-    f_best = ϕ(α_best)
-    return α_best, f_best
+    return LineSearchSolution(α_best, ReturnCode.Success)
+end
+
+function SciMLBase.reinit!(
+        cache::GoldenSectionCache; p = missing, stats = missing, kwargs...
+    )
+    p !== missing && (cache.p = p)
+    stats !== missing && (cache.stats = stats)
+    cache.α = oftype(cache.α, true)
+    return cache
 end
