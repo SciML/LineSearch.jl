@@ -138,14 +138,10 @@ end
         @testset "method: $(nameof(typeof(method)))" for method in (
                 LiFukushimaLineSearch(),
                 NoLineSearch(0.5),
-<<<<<<< HEAD
-                GoldenSection(; tol = 1.0e-4),
-=======
                 GoldenSection(; tol = 1e-4),
                 RobustNonMonotoneLineSearch(),
                 RobustNonMonotoneLineSearch(; M = 1), #strictly monotonous case
                 RobustNonMonotoneLineSearch(; M = 15),
->>>>>>> 315110466db3b53104c87dbe503ef6c3631ebc1c
             )
             converged, fu, u, iter, alphas = newton_raphson(nlp, method)
 
@@ -176,14 +172,10 @@ end
         @testset "method: $(nameof(typeof(method)))" for method in (
                 LiFukushimaLineSearch(),
                 NoLineSearch(0.5),
-<<<<<<< HEAD
-                GoldenSection(; tol = 1.0e-4),
-=======
                 GoldenSection(; tol = 1e-4),
                 RobustNonMonotoneLineSearch(),
                 RobustNonMonotoneLineSearch(; M = 1), #strictly monotonous case
                 RobustNonMonotoneLineSearch(; M = 15),
->>>>>>> 315110466db3b53104c87dbe503ef6c3631ebc1c
             )
             converged, fu, u, iter, alphas = newton_raphson(nlp, method)
 
