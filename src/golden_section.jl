@@ -30,7 +30,7 @@ function CommonSolve.init(
     T = promote_type(eltype(fu), eltype(u))
 
     φ = (sqrt(T(5)) + 1) / 2
-    resphi = 2 - φ 
+    resphi = 2 - φ
 
     @bb u_cache = similar(u)
     @bb fu_cache = similar(fu)
@@ -51,7 +51,7 @@ function CommonSolve.solve!(cache::GoldenSectionCache, u, du)
     T = promote_type(eltype(du), eltype(u))
     ϕ = @closure α -> cache.ϕ(cache.f, cache.p, u, du, α, cache.u_cache, cache.fu_cache)
 
-    a, b = zero(T), T(cache.α) 
+    a, b = zero(T), T(cache.α)
 
     x1 = a + cache.resphi * (b - a)
     x2 = b - cache.resphi * (b - a)
