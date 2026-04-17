@@ -155,6 +155,7 @@ end
             @testset "method: $(nameof(typeof(method)))" for method in (
                     BackTracking(; order = Val(3), autodiff),
                     BackTracking(; order = Val(2), autodiff),
+                    StrongWolfeLineSearch(; autodiff),
                 )
                 converged, fu, u, iter, alphas = newton_raphson(nlp, method)
 
@@ -187,6 +188,7 @@ end
             @testset "method: $(nameof(typeof(method)))" for method in (
                     BackTracking(; order = Val(3), autodiff),
                     BackTracking(; order = Val(2), autodiff),
+                    StrongWolfeLineSearch(; autodiff),
                 )
                 converged, fu, u, iter, alphas = newton_raphson(nlp, method)
 
