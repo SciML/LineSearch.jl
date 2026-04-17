@@ -5,7 +5,7 @@ A derivative-free line search that minimizes a unimodal function by successively
 narrowing the interval containing the minimum using the golden ratio.
 """
 @kwdef @concrete struct GoldenSection <: AbstractLineSearchAlgorithm
-    tol = 1e-7
+    tol = 1.0e-7
     maxiters::Int = 100
 end
 
