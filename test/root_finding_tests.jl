@@ -200,3 +200,58 @@ end
         end
     end
 end
+
+@testitem "Native Strong Wolfe edge cases" tags = [:core] begin
+    quadratic_eval(α) = (0.5 * (α - 1.0)^2, α - 1.0)
+
+    @testset "initial convergence" begin
+        ϕ_0, dϕ_0 = quadratic_eval(0.0)
+        α, ok = LineSearch._sw_search(quadratic_eval, ϕ_0, dϕ_0, 1.0e-4, 0.9, 1.0, 4.0, 10, 10)
+
+        @test ok
+        @test α ≈ 1.0
+    end
+
+    @testset "initial need for bracketing" begin
+        ϕ_0, dϕ_0 = quadratic_eval(0.0)
+        α, ok = LineSearch._sw_search(
+            quadratic_eval, ϕ_0, dϕ_0, 1.0e-4, 0.1, 0.25, 4.0, 10, 10
+        )
+
+        @test ok
+        @test α ≈ 1.0
+        @test α > 0.25
+    end
+
+    @testset "initial point is on the upward slope" begin
+        uphill_eval(α) = (0.5 * (α + 1.0)^2, α + 1.0)
+        ϕ_0, dϕ_0 = uphill_eval(0.0)
+        α, ok = LineSearch._sw_search(uphill_eval, ϕ_0, dϕ_0, 1.0e-4, 0.9, 1.0, 4.0, 10, 10)
+
+        @test !ok
+        @test α == 0.0
+    end
+
+    @testset "initial trial has already passed the minimum" begin
+        ϕ_0, dϕ_0 = quadratic_eval(0.0)
+        α, ok = LineSearch._sw_search(
+            quadratic_eval, ϕ_0, dϕ_0, 1.0e-4, 0.1, 3.0, 4.0, 10, 10
+        )
+
+        @test ok
+        @test α ≈ 1.0
+        @test α < 3.0
+    end
+
+    @testset "nonfinite trial values" begin
+        nonfinite_eval(α) = α > 2.0 ? (Inf, Inf) : quadratic_eval(α)
+        ϕ_0, dϕ_0 = nonfinite_eval(0.0)
+        α, ok = LineSearch._sw_search(
+            nonfinite_eval, ϕ_0, dϕ_0, 1.0e-4, 0.1, 3.0, 4.0, 10, 10
+        )
+
+        @test ok
+        @test isfinite(α)
+        @test 0.0 < α <= 2.0
+    end
+end

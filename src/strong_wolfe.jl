@@ -117,8 +117,8 @@ end
     return (ϕ, dϕ)
 end
 
-# N&W Algorithm 3.6. Fixed iteration count with `!done` guard is intentional
-# for GPU warp-uniform execution; do not rewrite as early `break`.
+# N&W Algorithm 3.6. Keep the fixed iteration count for GPU warp-uniform
+# execution; once `done`, later iterations just skip the body.
 @inline function _sw_zoom(
         eval_fn, a_lo, a_hi, ϕ_0, dϕ_0,
         ϕ_lo, dϕ_lo, ϕ_hi, dϕ_hi, c1, c2, maxiters
@@ -129,33 +129,33 @@ end
     done = false
 
     for _ in 1:maxiters
-        if !done
-            α_j = _sw_interpolate(a_lo, a_hi, ϕ_lo, ϕ_hi, dϕ_lo, dϕ_hi)
-            bracket = T(0.01) * abs(a_hi - a_lo)
-            α_j = clamp(
-                α_j,
-                min(a_lo, a_hi) + bracket,
-                max(a_lo, a_hi) - bracket
-            )
-            ϕ_j, dϕ_j = eval_fn(α_j)
+        done && continue
 
-            if (ϕ_j > ϕ_0 + c1 * α_j * dϕ_0) || (ϕ_j >= ϕ_lo)
-                a_hi = α_j
-                ϕ_hi = ϕ_j
-                dϕ_hi = dϕ_j
+        α_j = _sw_interpolate(a_lo, a_hi, ϕ_lo, ϕ_hi, dϕ_lo, dϕ_hi)
+        bracket = T(0.01) * abs(a_hi - a_lo)
+        α_j = clamp(
+            α_j,
+            min(a_lo, a_hi) + bracket,
+            max(a_lo, a_hi) - bracket
+        )
+        ϕ_j, dϕ_j = eval_fn(α_j)
+
+        if (ϕ_j > ϕ_0 + c1 * α_j * dϕ_0) || (ϕ_j >= ϕ_lo)
+            a_hi = α_j
+            ϕ_hi = ϕ_j
+            dϕ_hi = dϕ_j
+        else
+            if abs(dϕ_j) <= -c2 * dϕ_0
+                α_out, ok, done = α_j, true, true
             else
-                if abs(dϕ_j) <= -c2 * dϕ_0
-                    α_out, ok, done = α_j, true, true
-                else
-                    if dϕ_j * (a_hi - a_lo) >= zero(T)
-                        a_hi = a_lo
-                        ϕ_hi = ϕ_lo
-                        dϕ_hi = dϕ_lo
-                    end
-                    a_lo = α_j
-                    ϕ_lo = ϕ_j
-                    dϕ_lo = dϕ_j
+                if dϕ_j * (a_hi - a_lo) >= zero(T)
+                    a_hi = a_lo
+                    ϕ_hi = ϕ_lo
+                    dϕ_hi = dϕ_lo
                 end
+                a_lo = α_j
+                ϕ_lo = ϕ_j
+                dϕ_lo = dϕ_j
             end
         end
     end
@@ -165,7 +165,8 @@ end
     return (α_out, ok)
 end
 
-# N&W Algorithm 3.5.
+# N&W Algorithm 3.5. Keep the fixed iteration count for the same GPU
+# warp-uniform reason as `_sw_zoom`; once `done`, later iterations skip work.
 @inline function _sw_search(eval_fn, ϕ_0, dϕ_0, c1, c2, α_init, α_max, maxiters, zoom_maxiters)
     T = typeof(α_init)
 
@@ -180,29 +181,29 @@ end
     ok = false
 
     for i in 1:maxiters
-        if !done
-            ϕ_i, dϕ_i = eval_fn(α_i)
+        done && continue
 
-            if (ϕ_i > ϕ_0 + c1 * α_i * dϕ_0) || (ϕ_i >= ϕ_prev && i > 1)
-                α_z, ok_z = _sw_zoom(
-                    eval_fn, α_prev, α_i, ϕ_0, dϕ_0,
-                    ϕ_prev, dϕ_prev, ϕ_i, dϕ_i, c1, c2, zoom_maxiters
-                )
-                α_out, ok, done = α_z, ok_z, true
-            elseif abs(dϕ_i) <= -c2 * dϕ_0
-                α_out, ok, done = α_i, true, true
-            elseif dϕ_i >= zero(T)
-                α_z, ok_z = _sw_zoom(
-                    eval_fn, α_i, α_prev, ϕ_0, dϕ_0,
-                    ϕ_i, dϕ_i, ϕ_prev, dϕ_prev, c1, c2, zoom_maxiters
-                )
-                α_out, ok, done = α_z, ok_z, true
-            else
-                α_prev = α_i
-                ϕ_prev = ϕ_i
-                dϕ_prev = dϕ_i
-                α_i = min(α_i * T(2), α_max)
-            end
+        ϕ_i, dϕ_i = eval_fn(α_i)
+
+        if (ϕ_i > ϕ_0 + c1 * α_i * dϕ_0) || (ϕ_i >= ϕ_prev && i > 1)
+            α_z, ok_z = _sw_zoom(
+                eval_fn, α_prev, α_i, ϕ_0, dϕ_0,
+                ϕ_prev, dϕ_prev, ϕ_i, dϕ_i, c1, c2, zoom_maxiters
+            )
+            α_out, ok, done = α_z, ok_z, true
+        elseif abs(dϕ_i) <= -c2 * dϕ_0
+            α_out, ok, done = α_i, true, true
+        elseif dϕ_i >= zero(T)
+            α_z, ok_z = _sw_zoom(
+                eval_fn, α_i, α_prev, ϕ_0, dϕ_0,
+                ϕ_i, dϕ_i, ϕ_prev, dϕ_prev, c1, c2, zoom_maxiters
+            )
+            α_out, ok, done = α_z, ok_z, true
+        else
+            α_prev = α_i
+            ϕ_prev = ϕ_i
+            dϕ_prev = dϕ_i
+            α_i = min(α_i * T(2), α_max)
         end
     end
     if !done
