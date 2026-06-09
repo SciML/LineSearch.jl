@@ -18,25 +18,7 @@ concurrency:
 
 jobs:
   tests:
-    name: "Tests"
-    strategy:
-      fail-fast: false
-      matrix:
-        version:
-          - "1"
-          - "lts"
-        group:
-          - Core
-          - LineSearchesJL
-          - QA
-        exclude:
-          # QA tests only run on latest stable Julia
-          - version: "lts"
-            group: QA
-    uses: "SciML/.github/.github/workflows/tests.yml@v1"
-    with:
-      julia-version: "${{ matrix.version }}"
-      group: "${{ matrix.group }}"
+    uses: "SciML/.github/.github/workflows/grouped-tests.yml@v1"
     secrets: "inherit"
 
   enzyme:
