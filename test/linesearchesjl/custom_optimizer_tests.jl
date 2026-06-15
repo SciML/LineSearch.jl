@@ -1,5 +1,5 @@
-# Test based on https://julianlsolvers.github.io/LineSearches.jl/stable/examples/generated/customoptimizer.html
-# Note: Enzyme tests are in a separate test group (test/enzyme/), LineSearches.jl tests in test/linesearchesjl/
+# LineSearches.jl extension: custom optimizer tests
+# Based on https://julianlsolvers.github.io/LineSearches.jl/stable/examples/generated/customoptimizer.html
 using LineSearch, Test
 
 module CustomOptimizer
@@ -54,8 +54,8 @@ end
 
 using .CustomOptimizer
 
-@testset "Native Line Search: Custom Optimizer" begin
-    using SciMLBase
+@testset "LineSearches.jl: Custom Optimizer" begin
+    using LineSearches, SciMLBase
     using ADTypes, Tracker, ForwardDiff, Zygote, ReverseDiff, FiniteDiff
 
     @testset "OOP Problem" begin
@@ -67,17 +67,16 @@ using .CustomOptimizer
                 AutoReverseDiff(), AutoFiniteDiff(),
             )
             @testset "method: $(nameof(typeof(method)))" for method in (
-                    LiFukushimaLineSearch(),
-                    NoLineSearch(0.001),
-                    GoldenSection(; tol = 1.0e-4),
-                    BackTracking(; order = Val(3), autodiff),
-                    BackTracking(; order = Val(2), autodiff),
-                    StrongWolfeLineSearch(; autodiff),
+                    LineSearches.BackTracking(; order = 3),
+                    StrongWolfe(),
+                    HagerZhang(),
+                    MoreThuente(),
                 )
-                fu, u, iter, alphas = gradient_descent(nlp, method; autodiff)
+                linesearch = LineSearchesJL(; method, autodiff)
+                fu, u, iter, alphas = gradient_descent(nlp, linesearch; autodiff)
 
-                @test fu ≈ [0.0, 0.0] atol = 1.0e-1
-                @test u ≈ [1.0, 1.0] atol = 1.0e-1
+                @test fu ≈ [0.0, 0.0] atol = 1.0e-2
+                @test u ≈ [1.0, 1.0] atol = 1.0e-2
                 @test !all(isone, alphas)
             end
         end
@@ -91,17 +90,16 @@ using .CustomOptimizer
                 AutoForwardDiff(), AutoReverseDiff(), AutoFiniteDiff(),
             )
             @testset "method: $(nameof(typeof(method)))" for method in (
-                    LiFukushimaLineSearch(),
-                    NoLineSearch(0.001),
-                    GoldenSection(; tol = 1.0e-4),
-                    BackTracking(; order = Val(3), autodiff),
-                    BackTracking(; order = Val(2), autodiff),
-                    StrongWolfeLineSearch(; autodiff),
+                    LineSearches.BackTracking(; order = 3),
+                    StrongWolfe(),
+                    HagerZhang(),
+                    MoreThuente(),
                 )
-                fu, u, iter, alphas = gradient_descent(nlp, method; autodiff)
+                linesearch = LineSearchesJL(; method, autodiff)
+                fu, u, iter, alphas = gradient_descent(nlp, linesearch; autodiff)
 
-                @test fu ≈ [0.0, 0.0] atol = 1.0e-1
-                @test u ≈ [1.0, 1.0] atol = 1.0e-1
+                @test fu ≈ [0.0, 0.0] atol = 1.0e-2
+                @test u ≈ [1.0, 1.0] atol = 1.0e-2
                 @test !all(isone, alphas)
             end
         end

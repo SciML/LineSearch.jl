@@ -1,0 +1,15 @@
+[deps]
+ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
+LineSearch = "87fe0de2-c867-4266-b59a-2f0a94fc965b"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources]
+LineSearch = {path = "../.."}
+
+[compat]
+ExplicitImports = "1.14.0"
+SafeTestsets = "0.1, 1"
+SciMLTesting = "1"
+Test = "1.10"
