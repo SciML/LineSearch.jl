@@ -6,3 +6,4 @@ versions = ["1", "lts"]
 
 [QA]
 versions = ["lts", "1"]
+in_all = false
