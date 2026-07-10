@@ -20,6 +20,15 @@ differentiation for fast VJPs or JVPs.
     specified if analytic jacobian/jvp/vjp is not available.
   - `initial_alpha`: the initial step size to use. Defaults to `true` (which is equivalent
     to `1`).
+
+# Examples
+
+```julia
+using LineSearch
+using LineSearches
+
+alg = LineSearchesJL(method = LineSearches.Static(), initial_alpha = 1.0)
+```
 """
 struct LineSearchesJL{M, A, AD <: Union{Nothing, ADTypes.AbstractADType}} <:
     AbstractLineSearchAlgorithm

@@ -7,12 +7,28 @@ Strong Wolfe line search satisfying both Armijo (sufficient decrease) and
 curvature conditions. Based on Nocedal & Wright, "Numerical Optimization" (2006),
 Algorithms 3.5 and 3.6.
 
-`autodiff` is the automatic differentiation backend to use for computing the
-directional derivative. Must be specified if analytic jacobian/jvp/vjp is not
-available.
+# Keyword Arguments
+
+- `autodiff`: automatic differentiation backend used to compute directional
+  derivatives when analytic jacobian/JVP/VJP information is unavailable.
+- `c1`: Armijo sufficient-decrease coefficient.
+- `c2`: curvature-condition coefficient.
+- `α_init`: initial trial step length.
+- `α_max`: maximum trial step length.
+- `maxiters`: maximum iterations for the outer bracketing loop.
+- `zoom_maxiters`: maximum iterations for the inner zoom loop.
 
 `maxiters` bounds the outer bracketing loop (Alg. 3.5). `zoom_maxiters` bounds
 the inner zoom loop (Alg. 3.6) independently.
+
+# Examples
+
+```julia
+using ADTypes
+using LineSearch
+
+alg = StrongWolfeLineSearch(autodiff = AutoForwardDiff(), c1 = 1e-4, c2 = 0.9)
+```
 """
 @kwdef @concrete struct StrongWolfeLineSearch <: AbstractLineSearchAlgorithm
     autodiff = nothing

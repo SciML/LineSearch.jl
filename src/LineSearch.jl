@@ -30,6 +30,28 @@ include("strong_wolfe.jl")
 
 include("line_searches_ext.jl")
 
+"""
+    LineSearchSolution(step_size, retcode)
+
+The result returned by a line-search solve.
+
+# Fields
+
+- `step_size`: accepted step length for the current search direction.
+- `retcode`: a `SciMLBase.ReturnCode` describing whether the line search found
+  an acceptable step.
+
+# Examples
+
+```julia
+using LineSearch
+using SciMLBase
+
+sol = LineSearchSolution(0.5, SciMLBase.ReturnCode.Success)
+sol.step_size
+sol.retcode
+```
+"""
 @concrete struct LineSearchSolution
     step_size
     retcode::ReturnCode.T
