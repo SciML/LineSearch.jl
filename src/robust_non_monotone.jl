@@ -31,6 +31,14 @@ Robust NonMonotone Line Search is a derivative free line search method from DF S
     Defaults to ``fn_1 / n^2``.
   - `maxiters`: the maximum number of iterations allowed for the inner loop of the
     algorithm. Defaults to `100`.
+
+# Examples
+
+```julia
+using LineSearch
+
+alg = RobustNonMonotoneLineSearch(M = 10, gamma = 1e-4, maxiters = 100)
+```
 """
 @kwdef @concrete struct RobustNonMonotoneLineSearch <: AbstractLineSearchAlgorithm
     gamma = 1 // 10000

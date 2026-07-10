@@ -12,6 +12,14 @@ equations [li2000derivative](@cite).
     inside GPU kernels. However, this particular version doesn't support `stats` and
     `reinit!` and those will be ignored. Additionally, we fix the initial alpha for the
     search to be `1`.
+
+# Examples
+
+```julia
+using LineSearch
+
+alg = LiFukushimaLineSearch(lambda_0 = 1.0, beta = 0.5, maxiters = 100)
+```
 """
 @kwdef @concrete struct LiFukushimaLineSearch <: AbstractLineSearchAlgorithm
     lambda_0 = 1

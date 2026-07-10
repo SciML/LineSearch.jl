@@ -18,6 +18,15 @@ This is a modification of the algorithm described in Nocedal Wright (2nd ed), Se
 `autodiff` is the automatic differentiation backend to use for the line search. This is only
 used for the derivative of the objective function at the current step size. `autodiff` must
 be specified if analytic jacobian/jvp/vjp is not available.
+
+# Examples
+
+```julia
+using ADTypes
+using LineSearch
+
+alg = BackTracking(autodiff = AutoForwardDiff(), order = 3, maxiters = 100)
+```
 """
 @concrete struct BackTracking <: AbstractLineSearchAlgorithm
     autodiff

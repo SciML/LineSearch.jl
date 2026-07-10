@@ -1,8 +1,22 @@
 """
     GoldenSection(; tol = 1e-7, maxiters = 100)
 
-A derivative-free line search that minimizes a unimodal function by successively 
-narrowing the interval containing the minimum using the golden ratio.
+A derivative-free line search that minimizes a unimodal merit function by
+successively narrowing the interval containing the minimum using the golden
+ratio.
+
+# Keyword Arguments
+
+- `tol`: interval-width tolerance used to stop the golden-section search.
+- `maxiters`: maximum number of interval-refinement iterations.
+
+# Examples
+
+```julia
+using LineSearch
+
+alg = GoldenSection(tol = 1e-8, maxiters = 200)
+```
 """
 @kwdef @concrete struct GoldenSection <: AbstractLineSearchAlgorithm
     tol = 1.0e-7
