@@ -21,6 +21,9 @@ LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
 [extensions]
 LineSearchLineSearchesExt = "LineSearches"
 
+[sources]
+SciMLTesting = {url = "https://github.com/SciML/SciMLTesting.jl", rev = "a5cecca928f2c684c23505c3cd83921d71753e2e"}
+
 [compat]
 ADTypes = "1.9"
 CommonSolve = "0.2.4"
@@ -37,7 +40,7 @@ ReverseDiff = "1.15.3"
 SafeTestsets = "0.1, 1"
 SciMLBase = "2.54.0, 3.0"
 SciMLJacobianOperators = "0.1"
-SciMLTesting = "1"
+SciMLTesting = "2.1"
 StaticArraysCore = "1.4"
 Test = "1.10"
 Tracker = "0.2.35"
