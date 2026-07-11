@@ -1,5 +1,3 @@
-using SciMLTesting, LineSearch, Test
+using SciMLTesting, LineSearch
 
-include("public_api_docs.jl")
-
-run_qa(LineSearch; explicit_imports = true)
+run_qa(LineSearch; explicit_imports = true, api_docs_kwargs = (; rendered = true))
