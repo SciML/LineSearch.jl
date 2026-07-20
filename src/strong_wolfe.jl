@@ -229,6 +229,14 @@ end
     return (α_out, ok)
 end
 
+"""
+    strong_wolfe_search(ϕdϕ, ϕ₀, dϕ₀, c1, c2, α_init, α_max, maxiters, zoom_maxiters)
+
+Static, allocation-free strong Wolfe line search. Returns `(α, success)`.
+Safe to call inside GPU kernels.
+"""
+strong_wolfe_search(args...) = _sw_search(args...)
+
 function CommonSolve.solve!(cache::StrongWolfeLineSearchCache, u, du)
     T = promote_type(eltype(du), eltype(u))
 

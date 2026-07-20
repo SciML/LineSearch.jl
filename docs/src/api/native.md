@@ -25,4 +25,5 @@ RobustNonMonotoneLineSearch
 ```@docs
 BackTracking
 StrongWolfeLineSearch
+strong_wolfe_search
 ```

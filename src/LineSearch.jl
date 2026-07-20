@@ -61,7 +61,7 @@ export LineSearchSolution
 
 export BackTracking
 export GoldenSection
-export NoLineSearch, LiFukushimaLineSearch, RobustNonMonotoneLineSearch, StrongWolfeLineSearch
+export NoLineSearch, LiFukushimaLineSearch, RobustNonMonotoneLineSearch, StrongWolfeLineSearch, strong_wolfe_search
 export LineSearchesJL
 
 include("precompilation.jl")
