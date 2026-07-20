@@ -119,15 +119,15 @@ version = "1.11.0"
 
 [[deps.BibInternal]]
 deps = ["TestItems"]
-git-tree-sha1 = "b3107800faf461eca3281f89f8d768f4b3e99969"
+git-tree-sha1 = "9bdbf50f7a887f765688cc91e69ca9640146f583"
 uuid = "2027ae74-3657-4b95-ae00-e2f7d55c3e64"
-version = "0.3.7"
+version = "0.3.8"
 
 [[deps.BibParser]]
 deps = ["BibInternal", "DataStructures", "Dates", "JSONSchema", "TestItems", "YAML"]
-git-tree-sha1 = "2c9ed5108e3317571ef92c1cb0766fdd38c7d459"
+git-tree-sha1 = "d08b6681c80305ad00688fc3d89e8fccd6360770"
 uuid = "13533e5b-e1c2-4e57-8cef-cac5e52f6474"
-version = "0.2.3"
+version = "0.2.4"
 
 [[deps.Bibliography]]
 deps = ["BibInternal", "BibParser", "DataStructures", "Dates", "FileIO", "TestItems", "YAML"]
@@ -187,9 +187,9 @@ version = "1.6.0"
 
 [[deps.DataStructures]]
 deps = ["OrderedCollections"]
-git-tree-sha1 = "6fb53a69613a0b2b68a0d12671717d307ab8b24e"
+git-tree-sha1 = "b0bc6d2cad1fed8b7fd59a1551a991cb3d2809e6"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-version = "0.19.5"
+version = "0.19.6"
 
 [[deps.Dates]]
 deps = ["Printf"]
@@ -299,9 +299,9 @@ version = "0.3.2"
 
 [[deps.FileIO]]
 deps = ["Pkg", "Requires", "UUIDs"]
-git-tree-sha1 = "8e9c059d6857607253e837730dbf780b6b151acd"
+git-tree-sha1 = "6621fef488e496356c9c9625d0562c12a6070819"
 uuid = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
-version = "1.19.0"
+version = "1.20.0"
 
     [deps.FileIO.extensions]
     HTTPExt = "HTTP"
@@ -315,9 +315,9 @@ version = "1.11.0"
 
 [[deps.FindFirstFunctions]]
 deps = ["PrecompileTools"]
-git-tree-sha1 = "0a3bdd18071a4849bb8f58111374e7cbb26bf9f3"
+git-tree-sha1 = "acb3ed7a72a4f8736d6f34454306cbbe24e63cb2"
 uuid = "64ca27bc-2ba2-4a57-88aa-44e436879224"
-version = "3.1.0"
+version = "3.2.0"
 
 [[deps.FunctionWrappers]]
 git-tree-sha1 = "d62485945ce5ae9c0c48f124a84998d755bae00e"
@@ -466,7 +466,7 @@ version = "1.18.0+0"
 
 [[deps.LineSearch]]
 deps = ["ADTypes", "CommonSolve", "ConcreteStructs", "FastClosures", "LinearAlgebra", "MaybeInplace", "PrecompileTools", "SciMLBase", "SciMLJacobianOperators", "StaticArraysCore"]
-path = "/home/runner/_work/LineSearch.jl/LineSearch.jl"
+path = "/home/runner/work/LineSearch.jl/LineSearch.jl"
 uuid = "87fe0de2-c867-4266-b59a-2f0a94fc965b"
 version = "0.1.12"
 
@@ -688,9 +688,9 @@ version = "0.7.0"
 
 [[deps.SciMLBase]]
 deps = ["ADTypes", "Accessors", "Adapt", "ArrayInterface", "CommonSolve", "ConstructionBase", "Distributed", "DocStringExtensions", "EnumX", "FindFirstFunctions", "FunctionWrappersWrappers", "IteratorInterfaceExtensions", "LinearAlgebra", "Logging", "Markdown", "PreallocationTools", "PrecompileTools", "Preferences", "Printf", "Random", "RecipesBase", "RecursiveArrayTools", "Reexport", "RuntimeGeneratedFunctions", "SciMLLogging", "SciMLOperators", "SciMLPublic", "SciMLStructures", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface"]
-git-tree-sha1 = "14db8c4067550071d7906604d4a8e79618d2ee78"
+git-tree-sha1 = "c248f27771416daab4f2e573a956f41467d43821"
 uuid = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
-version = "3.35.2"
+version = "3.36.0"
 
     [deps.SciMLBase.extensions]
     SciMLBaseChainRulesCoreExt = "ChainRulesCore"
@@ -735,9 +735,9 @@ version = "3.35.2"
 
 [[deps.SciMLJacobianOperators]]
 deps = ["ADTypes", "ArrayInterface", "ConcreteStructs", "ConstructionBase", "DifferentiationInterface", "FastClosures", "LinearAlgebra", "SciMLBase", "SciMLOperators"]
-git-tree-sha1 = "32927d7d411cf7318cef1276cfc8fd2edec8ea69"
+git-tree-sha1 = "396fd0f85b71f87111618e1cbe6608a1bcc8a447"
 uuid = "19f34311-ddf3-4b8b-af20-060888a46c0e"
-version = "0.1.15"
+version = "0.1.16"
 
 [[deps.SciMLLogging]]
 deps = ["Logging", "LoggingExtras", "Preferences"]
@@ -753,9 +753,9 @@ version = "2.0.3"
 
 [[deps.SciMLOperators]]
 deps = ["Accessors", "Adapt", "ArrayInterface", "DocStringExtensions", "LinearAlgebra"]
-git-tree-sha1 = "c0b800cec18443b672ee54a84895ad568a11ab70"
+git-tree-sha1 = "6727e42481434c5e72574e7957c4a97e70ee3c6a"
 uuid = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
-version = "1.24.2"
+version = "1.24.3"
 
     [deps.SciMLOperators.extensions]
     SciMLOperatorsLoopVectorizationExt = "LoopVectorization"
