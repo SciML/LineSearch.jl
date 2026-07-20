@@ -207,3 +207,46 @@ end
         @test 0.0 < α <= 2.0
     end
 end
+
+@testset "Static Strong Wolfe residual mode" begin
+    using CommonSolve: init, solve!
+    using SciMLBase: NonlinearProblem, ReturnCode
+
+    # Residual r(u)=u-1; merit ½‖r‖². Static path expects grad_f = Jᵀr = u-1.
+    r(u, p) = u - 1
+    grad_f(u, p) = u - 1
+
+    @testset "successful residual search" begin
+        u0 = 0.0
+        nlp = NonlinearProblem(r, u0)
+        cache = init(
+            nlp, StrongWolfeLineSearch(; c2 = 0.1, α_init = 0.1, α_max = 4.0),
+            r(u0, nothing), u0; grad_f
+        )
+
+        @test cache isa LineSearch.StaticStrongWolfeLineSearchCache
+        @test cache.mode isa LineSearch._ResidualMerit
+
+        du = -grad_f(u0, nothing)
+        sol = solve!(cache, u0, du)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.step_size ≈ 1.0
+    end
+
+    @testset "failure returns α_init not last trial α" begin
+        # Start past the root so a short α_max cannot reach it; search fails at α_max.
+        u0 = 2.0
+        α_init = 0.05
+        nlp = NonlinearProblem(r, u0)
+        cache = init(
+            nlp,
+            StrongWolfeLineSearch(; c2 = 1.0e-8, α_init, α_max = 0.2, maxiters = 20),
+            r(u0, nothing), u0; grad_f
+        )
+
+        du = -grad_f(u0, nothing)
+        sol = solve!(cache, u0, du)
+        @test sol.retcode == ReturnCode.Failure
+        @test sol.step_size == α_init
+    end
+end
