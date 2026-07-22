@@ -19,7 +19,7 @@ makedocs(;
     authors = "Avik Pal",
     modules = [LineSearch],
     clean = true,
-    doctest = false,
+    doctest = true,
     linkcheck = true,
     checkdocs = :exports,
     plugins = [bib],
