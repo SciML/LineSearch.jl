@@ -21,6 +21,19 @@ Algorithms 3.5 and 3.6.
 `maxiters` bounds the outer bracketing loop (Alg. 3.5). `zoom_maxiters` bounds
 the inner zoom loop (Alg. 3.6) independently.
 
+# Merit function
+
+On the static path (`SArray` or `Number` states, usable inside GPU kernels) the
+merit is selected by problem type:
+
+- `AbstractNonlinearProblem` uses the residual merit `½‖f(u)‖²`.
+- `OptimizationProblem` uses the objective `f(u)` directly.
+
+The static path requires a `grad_f` keyword to `init`, and it must return the
+gradient of whichever merit is in use, so that `dot(grad_f(u), du)` is the true
+directional derivative: `Jᵀf` for the residual merit, `∇f` for the objective.
+`OptimizationProblem` is supported on the static path only.
+
 # Examples
 
 ```julia
@@ -56,6 +69,9 @@ end
     alg <: StrongWolfeLineSearch
 end
 
+struct _ResidualMerit end
+struct _ScalarObjective end
+
 @concrete struct StaticStrongWolfeLineSearchCache <: AbstractLineSearchCache
     f
     grad_f
@@ -66,6 +82,7 @@ end
     α_max
     maxiters::Int
     zoom_maxiters::Int
+    mode
 end
 
 function CommonSolve.init(
@@ -80,7 +97,40 @@ function CommonSolve.init(
     return StaticStrongWolfeLineSearchCache(
         prob.f, grad_f, prob.p,
         T(alg.c1), T(alg.c2), T(alg.α_init), T(alg.α_max),
-        alg.maxiters, alg.zoom_maxiters
+        alg.maxiters, alg.zoom_maxiters, _ResidualMerit()
+    )
+end
+
+function CommonSolve.init(
+        prob::OptimizationProblem, alg::StrongWolfeLineSearch,
+        fu::Union{SArray, Number}, u::Union{SArray, Number};
+        grad_f = nothing, kwargs...
+    )
+    grad_f === nothing && error(
+        "StrongWolfeLineSearch requires `grad_f` for static (GPU) dispatch"
+    )
+    T = promote_type(eltype(fu), eltype(u))
+    return StaticStrongWolfeLineSearchCache(
+        prob.f, grad_f, prob.p,
+        T(alg.c1), T(alg.c2), T(alg.α_init), T(alg.α_max),
+        alg.maxiters, alg.zoom_maxiters, _ScalarObjective()
+    )
+end
+
+# Optimization problems are supported on the static path only.
+# Typed on OptimizationProblem (not AbstractOptimizationProblem) to avoid
+# ambiguity with SciMLBase's `init(::OptimizationProblem, alg, args...)`.
+function CommonSolve.init(
+        prob::OptimizationProblem, alg::StrongWolfeLineSearch, fu, u;
+        kwargs...
+    )
+    throw(
+        ArgumentError(
+            "StrongWolfeLineSearch with an OptimizationProblem supports only \
+             `SArray` or `Number` states (the static/GPU path). Got \
+             `$(typeof(u))`. Pass static states, or use a NonlinearProblem for \
+             the allocating path."
+        )
     )
 end
 
@@ -117,18 +167,21 @@ end
     return ifelse(desc < 0, (a_lo + a_hi) / 2, candidate)
 end
 
-struct _SWNonlinearEval{F, G, P, U, D}
+struct _SWStaticEval{F, G, P, U, D, M}
     f::F
     grad_f::G
     p::P
     u::U
     du::D
+    mode::M
 end
 
-@inline function (e::_SWNonlinearEval)(α)
+@inline _sw_objective(::_ResidualMerit, f, u, p) = sum(abs2, f(u, p)) / 2
+@inline _sw_objective(::_ScalarObjective, f, u, p) = f(u, p)
+
+@inline function (e::_SWStaticEval)(α)
     u_new = e.u .+ α .* e.du
-    fu = e.f(u_new, e.p)
-    ϕ = sum(abs2, fu) / 2
+    ϕ = _sw_objective(e.mode, e.f, u_new, e.p)
     dϕ = dot(e.grad_f(u_new, e.p), e.du)
     return (ϕ, dϕ)
 end
@@ -253,21 +306,28 @@ function CommonSolve.solve!(cache::StrongWolfeLineSearchCache, u, du)
     return LineSearchSolution(cache.α, ReturnCode.Failure)
 end
 
-function CommonSolve.solve!(cache::StaticStrongWolfeLineSearchCache, u, du)
+function CommonSolve.solve!(
+        cache::StaticStrongWolfeLineSearchCache, u, du;
+        α_max = cache.α_max
+    )
     T = promote_type(eltype(du), eltype(u))
+    α_max_val = max(zero(T), min(T(cache.α_max), T(α_max)))
+    α_init = min(T(cache.α_init), α_max_val)
 
-    eval_fn = _SWNonlinearEval(cache.f, cache.grad_f, cache.p, u, du)
+    α_max_val > zero(T) ||
+        return LineSearchSolution(zero(T), ReturnCode.Failure)
 
+    eval_fn = _SWStaticEval(cache.f, cache.grad_f, cache.p, u, du, cache.mode)
     ϕ_0, dϕ_0 = eval_fn(zero(T))
-    isfinite(ϕ_0) || return LineSearchSolution(T(cache.α_init), ReturnCode.Failure)
-    dϕ_0 >= zero(T) && return LineSearchSolution(T(cache.α_init), ReturnCode.Failure)
+
+    (isfinite(ϕ_0) && isfinite(dϕ_0) && dϕ_0 < zero(T)) ||
+        return LineSearchSolution(α_init, ReturnCode.Failure)
 
     α, ok = _sw_search(
         eval_fn, ϕ_0, dϕ_0, cache.c1, cache.c2,
-        T(cache.α_init), T(cache.α_max), cache.maxiters, cache.zoom_maxiters
+        α_init, α_max_val, cache.maxiters, cache.zoom_maxiters
     )
-    ok && return LineSearchSolution(α, ReturnCode.Success)
-    return LineSearchSolution(T(cache.α_init), ReturnCode.Failure)
+    return LineSearchSolution(ok ? α : α_init, ok ? ReturnCode.Success : ReturnCode.Failure)
 end
 
 function SciMLBase.reinit!(
