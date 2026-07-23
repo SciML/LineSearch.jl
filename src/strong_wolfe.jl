@@ -27,12 +27,12 @@ On the static path (`SArray` or `Number` states, usable inside GPU kernels) the
 merit is selected by problem type:
 
 - `AbstractNonlinearProblem` uses the residual merit `½‖f(u)‖²`.
-- `AbstractOptimizationProblem` uses the objective `f(u)` directly.
+- `OptimizationProblem` uses the objective `f(u)` directly.
 
 The static path requires a `grad_f` keyword to `init`, and it must return the
 gradient of whichever merit is in use, so that `dot(grad_f(u), du)` is the true
 directional derivative: `Jᵀf` for the residual merit, `∇f` for the objective.
-`AbstractOptimizationProblem` is supported on the static path only.
+`OptimizationProblem` is supported on the static path only.
 
 # Examples
 
@@ -102,7 +102,7 @@ function CommonSolve.init(
 end
 
 function CommonSolve.init(
-        prob::AbstractOptimizationProblem, alg::StrongWolfeLineSearch,
+        prob::OptimizationProblem, alg::StrongWolfeLineSearch,
         fu::Union{SArray, Number}, u::Union{SArray, Number};
         grad_f = nothing, kwargs...
     )
@@ -118,8 +118,10 @@ function CommonSolve.init(
 end
 
 # Optimization problems are supported on the static path only.
+# Typed on OptimizationProblem (not AbstractOptimizationProblem) to avoid
+# ambiguity with SciMLBase's `init(::OptimizationProblem, alg, args...)`.
 function CommonSolve.init(
-        prob::AbstractOptimizationProblem, alg::StrongWolfeLineSearch, fu, u;
+        prob::OptimizationProblem, alg::StrongWolfeLineSearch, fu, u;
         kwargs...
     )
     throw(

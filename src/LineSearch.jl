@@ -6,7 +6,7 @@ using ConcreteStructs: @concrete
 using FastClosures: @closure
 using LinearAlgebra: norm, dot
 using MaybeInplace: @bb
-using SciMLBase: SciMLBase, AbstractNonlinearProblem, AbstractOptimizationProblem,
+using SciMLBase: SciMLBase, AbstractNonlinearProblem, OptimizationProblem,
                  ReturnCode, NonlinearFunction
 using SciMLJacobianOperators: VecJacOperator, JacVecOperator
 using StaticArraysCore: SArray
