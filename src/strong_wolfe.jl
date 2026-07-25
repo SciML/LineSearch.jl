@@ -51,18 +51,13 @@ alg = StrongWolfeLineSearch(autodiff = AutoForwardDiff(), c1 = 1e-4, c2 = 0.9)
 end
 
 @concrete mutable struct StrongWolfeLineSearchCache <: AbstractLineSearchCache
-    f
-    p
-    deriv_op
-    u_cache
-    fu_cache
+    merit_eval
     c1
     c2
     α
     α_max
     maxiters::Int
     zoom_maxiters::Int
-    stats <: Union{SciMLBase.NLStats, Nothing}
     alg <: StrongWolfeLineSearch
 end
 
@@ -132,14 +127,29 @@ function generic_strongwolfe_init(
         autodiff = nothing, kwargs...
     )
     autodiff = autodiff !== nothing ? autodiff : alg.autodiff
-    _, _, deriv_op = construct_jvp_or_vjp_operator(prob, fu, u; autodiff)
-    @bb u_cache = similar(u)
-    @bb fu_cache = similar(fu)
+    ev = init_merit(prob, fu, u; autodiff, stats)
     T = promote_type(eltype(fu), eltype(u))
+    return build_strongwolfe_cache(ev, alg, T)
+end
+
+function CommonSolve.init(
+        prob::OptimizationProblem, alg::StrongWolfeLineSearch, u;
+        stats::Union{SciMLBase.NLStats, Nothing} = nothing, kwargs...
+    )
+    ev = init_merit(prob, u; stats)
+    return build_strongwolfe_cache(ev, alg, real(eltype(u)))
+end
+
+function CommonSolve.init(
+        prob::OptimizationProblem, alg::StrongWolfeLineSearch, gu, u; kwargs...
+    )
+    return CommonSolve.init(prob, alg, u; kwargs...)
+end
+
+function build_strongwolfe_cache(ev, alg::StrongWolfeLineSearch, ::Type{T}) where {T}
     return StrongWolfeLineSearchCache(
-        prob.f, prob.p, deriv_op, u_cache, fu_cache,
-        T(alg.c1), T(alg.c2), T(alg.α_init), T(alg.α_max),
-        alg.maxiters, alg.zoom_maxiters, stats, alg
+        ev, T(alg.c1), T(alg.c2), T(alg.α_init), T(alg.α_max),
+        alg.maxiters, alg.zoom_maxiters, alg
     )
 end
 
@@ -267,19 +277,16 @@ end
     return (α_out, ok)
 end
 
-function CommonSolve.solve!(cache::StrongWolfeLineSearchCache, u, du)
+function CommonSolve.solve!(
+        cache::StrongWolfeLineSearchCache, u, du; ϕ0 = nothing, dϕ0 = nothing
+    )
     T = promote_type(eltype(du), eltype(u))
 
-    ϕdϕ = @closure α -> begin
-        @bb @. cache.u_cache = u + α * du
-        cache.fu_cache = evaluate_f!!(cache.f, cache.fu_cache, cache.u_cache, cache.p)
-        add_nf!(cache.stats)
-        obj = sum(abs2, cache.fu_cache) / 2
-        deriv = cache.deriv_op(du, cache.u_cache, cache.fu_cache, cache.p)
-        return obj, deriv
-    end
+    ev = cache.merit_eval
+    invalidate!(ev)
+    ϕdϕ = @closure α -> merit_ϕdϕ(ev, u, du, α)
 
-    ϕ_0, dϕ_0 = ϕdϕ(zero(T))
+    ϕ_0, dϕ_0 = merit_ϕdϕ_at_zero(ev, u, du, ϕ0, dϕ0)
     isfinite(ϕ_0) || return LineSearchSolution(cache.α, ReturnCode.Failure)
     dϕ_0 >= zero(T) && return LineSearchSolution(cache.α, ReturnCode.Failure)
 
@@ -318,11 +325,15 @@ end
 function SciMLBase.reinit!(
         cache::StrongWolfeLineSearchCache; p = missing, stats = missing, kwargs...
     )
-    p !== missing && (cache.p = p)
-    stats !== missing && (cache.stats = stats)
+    SciMLBase.reinit!(cache.merit_eval; p, stats)
     cache.α = oftype(cache.α, cache.alg.α_init)
     cache.c1 = oftype(cache.c1, cache.alg.c1)
     cache.c2 = oftype(cache.c2, cache.alg.c2)
     cache.α_max = oftype(cache.α_max, cache.alg.α_max)
+    return cache
+end
+
+function set_initial_step!(cache::StrongWolfeLineSearchCache, α)
+    cache.α = oftype(cache.α, α)
     return cache
 end

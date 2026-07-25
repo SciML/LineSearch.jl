@@ -24,15 +24,10 @@ alg = GoldenSection(tol = 1e-8, maxiters = 200)
 end
 
 @concrete mutable struct GoldenSectionCache <: AbstractLineSearchCache
-    ϕ
-    f
-    p
-    u_cache
-    fu_cache
+    merit_eval
     α
     φ
     resphi
-    stats <: Union{SciMLBase.NLStats, Nothing}
     alg <: GoldenSection
     maxiters::Int
 end
@@ -42,28 +37,33 @@ function CommonSolve.init(
         stats::Union{SciMLBase.NLStats, Nothing} = nothing, kwargs...
     )
     T = promote_type(eltype(fu), eltype(u))
+    # Derivative free: no Jacobian operator is needed.
+    ev = init_merit(prob, fu, u; stats, need_deriv = false)
+    return build_golden_section_cache(ev, alg, T)
+end
 
-    φ = (sqrt(T(5)) + 1) / 2
-    resphi = 2 - φ
-
-    @bb u_cache = similar(u)
-    @bb fu_cache = similar(fu)
-
-    ϕ = @closure (f, p, u, du, α, u_cache, fu_cache) -> begin
-        @bb @. u_cache = u + α * du
-        fu_cache = evaluate_f!!(f, fu_cache, u_cache, p)
-        add_nf!(stats)
-        return @fastmath norm(fu_cache)^2 / 2
-    end
-
-    return GoldenSectionCache(
-        ϕ, prob.f, prob.p, u_cache, fu_cache, T(1), φ, resphi, stats, alg, alg.maxiters
+function CommonSolve.init(
+        prob::OptimizationProblem, alg::GoldenSection, u;
+        stats::Union{SciMLBase.NLStats, Nothing} = nothing, kwargs...
     )
+    ev = init_merit(prob, u; stats, need_deriv = false)
+    return build_golden_section_cache(ev, alg, real(eltype(u)))
+end
+
+function CommonSolve.init(prob::OptimizationProblem, alg::GoldenSection, gu, u; kwargs...)
+    return CommonSolve.init(prob, alg, u; kwargs...)
+end
+
+function build_golden_section_cache(ev, alg::GoldenSection, ::Type{T}) where {T}
+    φ = (sqrt(T(5)) + 1) / 2
+    return GoldenSectionCache(ev, T(1), φ, 2 - φ, alg, alg.maxiters)
 end
 
 function CommonSolve.solve!(cache::GoldenSectionCache, u, du)
     T = promote_type(eltype(du), eltype(u))
-    ϕ = @closure α -> cache.ϕ(cache.f, cache.p, u, du, α, cache.u_cache, cache.fu_cache)
+    ev = cache.merit_eval
+    invalidate!(ev)
+    ϕ = @closure α -> merit_ϕ(ev, u, du, α)
 
     a, b = zero(T), T(cache.α)
 
@@ -89,8 +89,7 @@ end
 function SciMLBase.reinit!(
         cache::GoldenSectionCache; p = missing, stats = missing, kwargs...
     )
-    p !== missing && (cache.p = p)
-    stats !== missing && (cache.stats = stats)
+    SciMLBase.reinit!(cache.merit_eval; p, stats)
     cache.α = oftype(cache.α, true)
     return cache
 end
