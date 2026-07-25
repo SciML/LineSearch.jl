@@ -1,12 +1,13 @@
 # Line searches driven by the objective merit (`OptimizationProblem`) rather
-# than the residual merit (`NonlinearProblem`).
+# than the residual merit (`NonlinearProblem`), plus the two searches that are
+# only meaningful with an acceptance predicate: Hager-Zhang and More-Thuente.
 using LineSearch, Test
 using SciMLBase, CommonSolve, LinearAlgebra
 using SciMLBase: ReturnCode, NonlinearProblem, OptimizationProblem, OptimizationFunction
 using ADTypes: AutoForwardDiff
 import ForwardDiff
 
-@testset "Objective merit" begin
+@testset "Objective merit and merit-agnostic line searches" begin
 
     # ------------------------------------------------------------- problems
 
@@ -24,6 +25,8 @@ import ForwardDiff
     Fobj_grad!(G, u, p) = (ForwardDiff.gradient!(G, x -> Fobj(x, p), u); G)
 
     ALGS = (
+        "HagerZhang" => HagerZhangLineSearch(),
+        "MoreThuente" => MoreThuenteLineSearch(),
         "StrongWolfe" => StrongWolfeLineSearch(),
         "BackTracking" => BackTracking(),
     )
@@ -97,6 +100,7 @@ import ForwardDiff
 
         cache = CommonSolve.init(prob, alg, u)
         sol = CommonSolve.solve!(cache, u, du)
+
         un = u .+ sol.step_size .* du
         @test sol.ϕ ≈ rosen(un, nothing)
         @test cache.merit_eval.u_cache ≈ un
@@ -168,11 +172,37 @@ import ForwardDiff
         @test sol.step_size == 0.25
     end
 
-    @testset "missing gradient is reported clearly" begin
+    @testset "missing gradient is reported clearly: $name" for (name, alg) in ALGS
         prob = OptimizationProblem(OptimizationFunction(rosen), [-1.2, 1.0])
         @test_throws ArgumentError CommonSolve.init(
-            prob, StrongWolfeLineSearch(), [-1.2, 1.0]
+            prob, alg, [-1.2, 1.0]
         )
+    end
+
+    # ---------------------------------------------- approximate Wolfe property
+
+    @testset "approximate Wolfe works below the roundoff floor" begin
+        # log(cosh(z)) underflows to exactly 0 for |z| ≲ 1e-8 while its
+        # derivative tanh(z) is still nonzero, so ϕ carries no usable decrease
+        # near the solution. Hager–Zhang states its conditions in terms of ϕ'
+        # and a tolerance around ϕ(0) and still accepts; a strict strong-Wolfe
+        # search cannot.
+        @test log(cosh(1.0e-8)) == 0.0
+
+        lc(x, p) = sum(z -> log(cosh(z - 1)), x)
+        lc_grad!(G, x, p) = (@. G = tanh(x - 1); G)
+        n = 64
+        u = fill(1 + 1.0e-9, n)          # already inside the flat region
+        g = zeros(n)
+        lc_grad!(g, u, nothing)
+        du = -g
+
+        prob = OptimizationProblem(OptimizationFunction(lc; grad = lc_grad!), u)
+        s_hz = CommonSolve.solve!(
+            CommonSolve.init(prob, HagerZhangLineSearch(), u), u, du
+        )
+        @test s_hz.retcode == ReturnCode.Success
+        @test s_hz.step_size > 0
     end
 
     # ---------------------------------------------------------- allocations
@@ -185,7 +215,7 @@ import ForwardDiff
         rosen_grad!(g, u, nothing)
         du = -g ./ norm(g, 1)
 
-        for alg in (StrongWolfeLineSearch(), BackTracking())
+        for (_, alg) in ALGS
             cache = CommonSolve.init(prob, alg, u)
             CommonSolve.solve!(cache, u, du)          # warm up
             a1 = @allocated CommonSolve.solve!(cache, u, du)
@@ -214,12 +244,12 @@ import ForwardDiff
             prob = OptimizationProblem(
                 OptimizationFunction(rosen; grad = rosen_grad!), u
             )
-            sol = CommonSolve.solve!(
-                CommonSolve.init(prob, StrongWolfeLineSearch(), u), u, du
-            )
-            @test sol.retcode == ReturnCode.Success
-            @test sol.step_size isa T
-            @test rosen(u .+ sol.step_size .* du, nothing) < rosen(u, nothing)
+            for (_, alg) in ALGS
+                sol = CommonSolve.solve!(CommonSolve.init(prob, alg, u), u, du)
+                @test sol.retcode == ReturnCode.Success
+                @test sol.step_size isa T
+                @test rosen(u .+ sol.step_size .* du, nothing) < rosen(u, nothing)
+            end
         end
     end
 end
