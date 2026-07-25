@@ -36,6 +36,8 @@ include("utils.jl")
 include("merit.jl")
 
 include("backtracking.jl")
+include("hager_zhang.jl")
+include("more_thuente.jl")
 include("golden_section.jl")
 include("li_fukushima.jl")
 include("no_search.jl")
@@ -89,6 +91,7 @@ export set_initial_step!
 export BackTracking
 export GoldenSection
 export NoLineSearch, LiFukushimaLineSearch, RobustNonMonotoneLineSearch, StrongWolfeLineSearch
+export HagerZhangLineSearch, MoreThuenteLineSearch
 export AbstractMerit, ResidualMerit, ObjectiveMerit
 export LineSearchesJL
 
