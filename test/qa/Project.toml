@@ -1,10 +1,12 @@
 [deps]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 LineSearch = "87fe0de2-c867-4266-b59a-2f0a94fc965b"
+LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 Aqua = "0.8"
+LineSearches = "7.3.0"
 SciMLTesting = "2.4"
 Test = "1.10"
