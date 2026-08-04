@@ -27,12 +27,9 @@ On the static path (`SArray` or `Number` states, usable inside GPU kernels) the
 merit is selected by problem type:
 
 - `AbstractNonlinearProblem` uses the residual merit `½‖f(u)‖²`.
-- `OptimizationProblem` uses the objective `f(u)` directly.
-
-The static path requires a `grad_f` keyword to `init`, and it must return the
-gradient of whichever merit is in use, so that `dot(grad_f(u), du)` is the true
-directional derivative: `Jᵀf` for the residual merit, `∇f` for the objective.
-`OptimizationProblem` is supported on the static path only.
+- `OptimizationProblem` uses the objective `f(u)` directly, with gradient from
+  `prob.f.grad` (out-of-place `grad(u, p)` on the `OptimizationFunction`).
+  This path is static-only.
 
 # Examples
 
@@ -104,14 +101,19 @@ end
 function CommonSolve.init(
         prob::OptimizationProblem, alg::StrongWolfeLineSearch,
         fu::Union{SArray, Number}, u::Union{SArray, Number};
-        grad_f = nothing, kwargs...
+        kwargs...
     )
-    grad_f === nothing && error(
-        "StrongWolfeLineSearch requires `grad_f` for static (GPU) dispatch"
+    grad = prob.f.grad
+    grad === nothing && throw(
+        ArgumentError(
+            "StrongWolfeLineSearch with an OptimizationProblem requires \
+             `prob.f.grad` (out-of-place) on the OptimizationFunction for the \
+             static/GPU path."
+        )
     )
     T = promote_type(eltype(fu), eltype(u))
     return StaticStrongWolfeLineSearchCache(
-        prob.f, grad_f, prob.p,
+        prob.f, grad, prob.p,
         T(alg.c1), T(alg.c2), T(alg.α_init), T(alg.α_max),
         alg.maxiters, alg.zoom_maxiters, _ScalarObjective()
     )
