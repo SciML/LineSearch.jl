@@ -141,10 +141,10 @@ end
 
 # Procedure U3: ϕ'(c) < 0 while ϕ(c) has risen above ϕ0 + ε_k.
 function hz_bisect(
-        p::HZParams{T}, ϕdϕ, alo::HZPoint{T}, ahi::HZPoint{T},
+        p::HZParams{T}, ϕdϕ, a_lo::HZPoint{T}, a_hi::HZPoint{T},
         θ::T, maxiters::Int
     ) where {T}
-    â, b̂ = alo, ahi
+    â, b̂ = a_lo, a_hi
     for _ in 1:maxiters
         d = ϕdϕ((one(T) - θ) * â.α + θ * b̂.α)
         hz_wolfe(d, p) && return (â, b̂, true, d)
