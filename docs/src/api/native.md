@@ -44,3 +44,10 @@ RobustNonMonotoneLineSearch
 BackTracking
 StrongWolfeLineSearch
 ```
+
+## Wolfe Line Searches
+
+```@docs
+HagerZhangLineSearch
+MoreThuenteLineSearch
+```
