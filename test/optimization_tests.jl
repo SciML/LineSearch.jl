@@ -2,7 +2,7 @@ using LineSearch, Test
 using CommonSolve: init, solve!
 using SciMLBase: OptimizationFunction, OptimizationProblem, ReturnCode
 
-@testset "Static Strong Wolfe OptimizationProblem path" begin
+@testset "Strong Wolfe OptimizationProblem path" begin
     # Scalar Number u0 is supported on the static path.
     @testset "scalar Number u0" begin
         # φ(u) = ½(u-1)², minimum at u = 1; gradient via OptimizationFunction.grad
@@ -39,11 +39,25 @@ using SciMLBase: OptimizationFunction, OptimizationProblem, ReturnCode
         )
     end
 
-    @testset "non-static OptimizationProblem is rejected" begin
-        optf = OptimizationFunction((u, p) -> sum(abs2, u); grad = (u, p) -> 2 .* u)
-        optprob = OptimizationProblem(optf, [0.0, 0.0])
-        @test_throws ArgumentError init(
-            optprob, StrongWolfeLineSearch(), [0.0], [0.0, 0.0]
+    @testset "Vector u0" begin
+        f(u, p) = sum(abs2, u)
+        grad(u, p) = 2 .* u
+
+        u0 = [1.0, 1.0]
+        optf = OptimizationFunction(f; grad)
+        optprob = OptimizationProblem(optf, u0)
+        cache = init(
+            optprob, StrongWolfeLineSearch(; c2 = 0.1, α_init = 1.0, α_max = 4.0),
+            f(u0, nothing), u0
         )
+
+        @test cache isa LineSearch.StaticStrongWolfeLineSearchCache
+        @test cache.mode isa LineSearch._ScalarObjective
+        @test cache.grad_f === optf.grad
+
+        du = -grad(u0, nothing)
+        sol = solve!(cache, u0, du)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.step_size ≈ 0.5
     end
 end
