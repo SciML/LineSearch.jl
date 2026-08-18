@@ -111,7 +111,7 @@ function CommonSolve.init(
              `prob.f.grad` (out-of-place) on the OptimizationFunction."
         )
     )
-    T = promote_type(eltype(fu), eltype(u))
+    T = eltype(prob.u0)
     return StaticStrongWolfeLineSearchCache(
         prob.f, grad, prob.p,
         T(alg.c1), T(alg.c2), T(alg.α_init), T(alg.α_max),
