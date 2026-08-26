@@ -140,12 +140,6 @@ function CommonSolve.init(
     return build_strongwolfe_cache(ev, alg, real(eltype(u)))
 end
 
-function CommonSolve.init(
-        prob::OptimizationProblem, alg::StrongWolfeLineSearch, gu, u; kwargs...
-    )
-    return CommonSolve.init(prob, alg, u; kwargs...)
-end
-
 function build_strongwolfe_cache(ev, alg::StrongWolfeLineSearch, ::Type{T}) where {T}
     return StrongWolfeLineSearchCache(
         ev, T(alg.c1), T(alg.c2), T(alg.α_init), T(alg.α_max),
