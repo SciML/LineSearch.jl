@@ -107,7 +107,7 @@ function CommonSolve.solve!(
     end
 
     ϕx₁ ≤ ϕ₀ + T(cache.alg.c_1) * α₂ * dϕ₀ &&
-        return LineSearchSolution(α₂, ReturnCode.Success)
+        return solution_at!(ev, u, du, α₂, ReturnCode.Success)
     α_tmp = -(dϕ₀ * α₂^2) / (2 * (ϕx₁ - ϕ₀ - dϕ₀ * α₂))
     α₁ = α₂
     α_tmp = min(α_tmp, α₂ * T(cache.alg.ρ_hi))
@@ -116,7 +116,7 @@ function CommonSolve.solve!(
 
     for _ in (iteration + 1):(cache.maxiters)
         ϕx₁ ≤ ϕ₀ + T(cache.alg.c_1) * α₂ * dϕ₀ &&
-            return LineSearchSolution(α₂, ReturnCode.Success)
+            return solution_at!(ev, u, du, α₂, ReturnCode.Success)
 
         α_tmp = compute_alpha_backtracking(cache.alg.order, T, dϕ₀, ϕ₀, ϕx₀, ϕx₁, α₁, α₂)
 
@@ -127,7 +127,7 @@ function CommonSolve.solve!(
         ϕx₀, ϕx₁ = ϕx₁, ϕ(α₂)
     end
 
-    return LineSearchSolution(α₂, ReturnCode.Failure)
+    return solution_at!(ev, u, du, α₂, ReturnCode.Failure)
 end
 
 @inline function compute_alpha_backtracking(

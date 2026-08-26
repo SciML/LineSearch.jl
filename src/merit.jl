@@ -58,6 +58,8 @@ the most recently evaluated `α`, which lets the caller reuse it.
     fu_cache
     stats <: Union{SciMLBase.NLStats, Nothing}
     last_α
+    last_ϕ
+    last_dϕ
     last_has_deriv::Bool
 end
 
@@ -84,9 +86,10 @@ function init_merit(
     end
     @bb u_cache = similar(u)
     @bb fu_cache = similar(fu)
+    nan = convert(promote_type(eltype(fu), eltype(u)), NaN)
     return MeritEvaluator(
         ResidualMerit(), prob.f, prob.p, deriv_op, u_cache, fu_cache, stats,
-        convert(promote_type(eltype(fu), eltype(u)), NaN), false
+        nan, nan, nan, false
     )
 end
 
@@ -102,9 +105,10 @@ function init_merit(
     end
     @bb u_cache = similar(u)
     @bb fu_cache = similar(u)
+    nan = convert(real(eltype(u)), NaN)
     return MeritEvaluator(
         ObjectiveMerit(), value, prob.p, fg, u_cache, fu_cache, stats,
-        convert(real(eltype(u)), NaN), false
+        nan, nan, nan, false
     )
 end
 
@@ -114,17 +118,19 @@ function init_merit(prob::OptimizationProblem, ::Any, u; kwargs...)
     return init_merit(prob, u; kwargs...)
 end
 
-# `OptimizationFunction` carries two-argument closures once it has been
-# instantiated against a problem and three-argument ones before that. Resolve
-# the arity once here, against the types actually used, rather than at every
-# evaluation.
 function objective_and_fused_gradient(f::SciMLBase.AbstractOptimizationFunction, p, u)
     value = @closure (u, p) -> f.f(u, p)
 
     if f.fg !== nothing
         fg = f.fg
         applicable(fg, u, u, p) && return value, @closure((G, u, p) -> fg(G, u, p))
-        return value, @closure((G, u, p) -> fg(G, u))
+        return value, @closure(
+                (G, u, p) -> begin
+                    ϕ, grad = fg(u, p)
+                    copyto!(G, grad)
+                    return ϕ
+                end
+            )
     end
 
     if f.grad !== nothing
@@ -132,7 +138,12 @@ function objective_and_fused_gradient(f::SciMLBase.AbstractOptimizationFunction,
         if applicable(g, u, u, p)
             return value, @closure((G, u, p) -> (g(G, u, p); f.f(u, p)))
         end
-        return value, @closure((G, u, p) -> (g(G, u); f.f(u, p)))
+        return value, @closure(
+                (G, u, p) -> begin
+                    copyto!(G, g(u, p))
+                    return f.f(u, p)
+                end
+            )
     end
 
     throw(
@@ -151,7 +162,11 @@ Forget which `α` was last evaluated. Line searches must call this on entry:
 `u` and `du` change between calls, so a cached `α` from the previous search
 refers to a different point entirely.
 """
-invalidate!(ev::MeritEvaluator) = (ev.last_has_deriv = false; ev)
+function invalidate!(ev::MeritEvaluator)
+    ev.last_α = oftype(ev.last_α, NaN)
+    ev.last_has_deriv = false
+    return ev
+end
 
 """
     merit_ϕdϕ_at_zero(ev, u, du, ϕ0, dϕ0)
@@ -198,19 +213,30 @@ residual/gradient at `α`, re-evaluating only when the last probe was somewhere
 else. Line searches call this before returning, so a caller can always reuse the
 accepted point instead of recomputing it.
 
-Returns `true` when a re-evaluation was needed.
+Returns the cached `(ϕ, ϕ')` values.
 """
 function ensure_evaluated_at!(ev::MeritEvaluator, u, du, α)
-    (ev.last_has_deriv && ev.last_α == α) && return false
-    merit_ϕdϕ(ev, u, du, α)
-    return true
+    (ev.last_has_deriv && ev.last_α == α) || merit_ϕdϕ(ev, u, du, α)
+    return (ev.last_ϕ, ev.last_dϕ)
+end
+
+function ensure_value_at!(ev::MeritEvaluator, u, du, α)
+    ev.last_α == α || merit_ϕ(ev, u, du, α)
+    return ev.last_ϕ
+end
+
+function solution_at!(ev::MeritEvaluator, u, du, α, retcode)
+    ϕ, dϕ = ensure_evaluated_at!(ev, u, du, α)
+    return LineSearchSolution(α, retcode, ϕ, dϕ)
 end
 
 function _merit_ϕ(::ResidualMerit, ev::MeritEvaluator, u, du, α)
     u_cache = ray_point!(ev, u, du, α, false)
     ev.fu_cache = evaluate_f!!(ev.f, ev.fu_cache, u_cache, ev.p)
     add_nf!(ev.stats)
-    return @fastmath norm(ev.fu_cache)^2 / 2
+    ϕ = @fastmath norm(ev.fu_cache)^2 / 2
+    ev.last_ϕ = ϕ
+    return ϕ
 end
 
 function _merit_ϕdϕ(::ResidualMerit, ev::MeritEvaluator, u, du, α)
@@ -220,21 +246,29 @@ function _merit_ϕdϕ(::ResidualMerit, ev::MeritEvaluator, u, du, α)
     u_cache = ray_point!(ev, u, du, α, true)
     ev.fu_cache = evaluate_f!!(ev.f, ev.fu_cache, u_cache, ev.p)
     add_nf!(ev.stats)
-    deriv = ev.deriv_op(du, u_cache, ev.fu_cache, ev.p)
-    return (@fastmath(norm(ev.fu_cache)^2 / 2), deriv)
+    dϕ = ev.deriv_op(du, u_cache, ev.fu_cache, ev.p)
+    ϕ = @fastmath norm(ev.fu_cache)^2 / 2
+    ev.last_ϕ = ϕ
+    ev.last_dϕ = dϕ
+    return (ϕ, dϕ)
 end
 
 function _merit_ϕ(::ObjectiveMerit, ev::MeritEvaluator, u, du, α)
     u_cache = ray_point!(ev, u, du, α, false)
     add_nf!(ev.stats)
-    return ev.f(u_cache, ev.p)
+    ϕ = ev.f(u_cache, ev.p)
+    ev.last_ϕ = ϕ
+    return ϕ
 end
 
 function _merit_ϕdϕ(::ObjectiveMerit, ev::MeritEvaluator, u, du, α)
     u_cache = ray_point!(ev, u, du, α, true)
     add_nf!(ev.stats)
     ϕ = ev.deriv_op(ev.fu_cache, u_cache, ev.p)
-    return (ϕ, dot(ev.fu_cache, du))
+    dϕ = dot(ev.fu_cache, du)
+    ev.last_ϕ = ϕ
+    ev.last_dϕ = dϕ
+    return (ϕ, dϕ)
 end
 
 function SciMLBase.reinit!(ev::MeritEvaluator; p = missing, stats = missing, kwargs...)

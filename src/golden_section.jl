@@ -83,7 +83,8 @@ function CommonSolve.solve!(cache::GoldenSectionCache, u, du)
     end
 
     α_best = (a + b) / 2
-    return LineSearchSolution(α_best, ReturnCode.Success)
+    ϕ_best = ensure_value_at!(ev, u, du, α_best)
+    return LineSearchSolution(α_best, ReturnCode.Success, ϕ_best, nothing)
 end
 
 function SciMLBase.reinit!(
