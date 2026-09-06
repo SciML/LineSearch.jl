@@ -280,16 +280,21 @@ function CommonSolve.solve!(
     invalidate!(ev)
     ϕdϕ = @closure α -> merit_ϕdϕ(ev, u, du, α)
 
+    α_max = max(zero(T), T(cache.α_max))
+    α_init = min(max(zero(T), T(cache.α)), α_max)
+    α_max > zero(T) || return LineSearchSolution(zero(T), ReturnCode.Failure)
+
     ϕ_0, dϕ_0 = merit_ϕdϕ_at_zero(ev, u, du, ϕ0, dϕ0)
-    isfinite(ϕ_0) || return LineSearchSolution(cache.α, ReturnCode.Failure)
-    dϕ_0 >= zero(T) && return LineSearchSolution(cache.α, ReturnCode.Failure)
+    (isfinite(ϕ_0) && isfinite(dϕ_0) && dϕ_0 < zero(T)) ||
+        return LineSearchSolution(α_init, ReturnCode.Failure)
 
     α, ok = _sw_search(
         ϕdϕ, ϕ_0, dϕ_0, cache.c1, cache.c2,
-        cache.α, cache.α_max, cache.maxiters, cache.zoom_maxiters
+        α_init, α_max, cache.maxiters, cache.zoom_maxiters
     )
-    ok && return LineSearchSolution(α, ReturnCode.Success)
-    return LineSearchSolution(cache.α, ReturnCode.Failure)
+    return solution_at!(
+        ev, u, du, ok ? α : α_init, ok ? ReturnCode.Success : ReturnCode.Failure
+    )
 end
 
 function CommonSolve.solve!(

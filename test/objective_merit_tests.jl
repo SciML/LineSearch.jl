@@ -86,7 +86,8 @@ import ForwardDiff
 
     # ------------------------------------------- solution carries ϕ and dϕ
 
-    @testset "LineSearchSolution reports ϕ and dϕ" begin
+    @testset "LineSearchSolution reports the accepted point: $name" for
+        (name, alg) in (ALGS..., "GoldenSection" => GoldenSection())
         optf = OptimizationFunction(rosen; grad = rosen_grad!)
         prob = OptimizationProblem(optf, [-1.2, 1.0])
         u = [-1.2, 1.0]
@@ -94,14 +95,19 @@ import ForwardDiff
         rosen_grad!(g, u, nothing)
         du = -g ./ norm(g, 1)
 
-        cache = CommonSolve.init(prob, StrongWolfeLineSearch(), u)
+        cache = CommonSolve.init(prob, alg, u)
         sol = CommonSolve.solve!(cache, u, du)
         un = u .+ sol.step_size .* du
-        gn = zeros(2)
-        rosen_grad!(gn, un, nothing)
-        # The gradient at the accepted step is left in the cache, so the caller
-        # need not re-evaluate it.
-        @test cache.merit_eval.fu_cache ≈ gn
+        @test sol.ϕ ≈ rosen(un, nothing)
+        @test cache.merit_eval.u_cache ≈ un
+        if alg isa GoldenSection
+            @test sol.dϕ === nothing
+        else
+            gn = zeros(2)
+            rosen_grad!(gn, un, nothing)
+            @test sol.dϕ ≈ dot(gn, du)
+            @test cache.merit_eval.fu_cache ≈ gn
+        end
     end
 
     @testset "two-argument constructor stays available" begin
@@ -114,28 +120,52 @@ import ForwardDiff
 
     # ------------------------------------------------ gradient arity handling
 
-    @testset "accepts both 3-arg and 2-arg gradient closures" begin
+    @testset "accepts in-place and out-of-place derivatives: $name" for (name, alg) in ALGS
         u = [-1.2, 1.0]
         g = zeros(2)
         rosen_grad!(g, u, nothing)
         du = -g ./ norm(g, 1)
 
-        # Three-argument form, as written on a raw OptimizationFunction.
         p3 = OptimizationProblem(OptimizationFunction(rosen; grad = rosen_grad!), u)
         s3 = CommonSolve.solve!(
-            CommonSolve.init(p3, StrongWolfeLineSearch(), u), u, du
+            CommonSolve.init(p3, alg, u), u, du
         )
 
-        # Two-argument form, as produced by `instantiate_function`.
-        p2 = OptimizationProblem(
-            OptimizationFunction(rosen; grad = (G, x) -> rosen_grad!(G, x, nothing)), u
+        grad(x, p) = [
+            -2 * (1 - x[1]) - 400 * x[1] * (x[2] - x[1]^2),
+            200 * (x[2] - x[1]^2),
+        ]
+        p2_grad = OptimizationProblem(
+            OptimizationFunction(rosen; grad), u
         )
-        s2 = CommonSolve.solve!(
-            CommonSolve.init(p2, StrongWolfeLineSearch(), u), u, du
+        s2_grad = CommonSolve.solve!(
+            CommonSolve.init(p2_grad, alg, u), u, du
+        )
+        fg(x, p) = (rosen(x, p), grad(x, p))
+        p2_fg = OptimizationProblem(OptimizationFunction(rosen; fg), u)
+        s2_fg = CommonSolve.solve!(
+            CommonSolve.init(p2_fg, alg, u), u, du
         )
 
         @test s3.retcode == ReturnCode.Success
-        @test s2.step_size ≈ s3.step_size
+        @test s2_grad.retcode == ReturnCode.Success
+        @test s2_fg.retcode == ReturnCode.Success
+        @test s2_grad.step_size ≈ s3.step_size
+        @test s2_fg.step_size ≈ s3.step_size
+    end
+
+    @testset "StrongWolfe respects α_max after set_initial_step!" begin
+        f(x, p) = (x[1] - 1)^2 / 2
+        g!(G, x, p) = (G[1] = x[1] - 1; G)
+        u, du = [0.0], [1.0]
+        prob = OptimizationProblem(OptimizationFunction(f; grad = g!), u)
+        cache = CommonSolve.init(
+            prob, StrongWolfeLineSearch(α_init = 0.1, α_max = 0.25), u
+        )
+        set_initial_step!(cache, 1.0)
+        sol = CommonSolve.solve!(cache, u, du)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.step_size == 0.25
     end
 
     @testset "missing gradient is reported clearly" begin
