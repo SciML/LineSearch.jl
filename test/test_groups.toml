@@ -1,6 +1,12 @@
 [Core]
 versions = ["1", "lts"]
 
+["Core 32-bit"]
+group = "Core"
+versions = ["1"]
+os = ["ubuntu-latest"]
+arch = "x86"
+
 [LineSearchesJL]
 versions = ["1", "lts"]
 
