@@ -1,11 +1,8 @@
 [Core]
 versions = ["1", "lts"]
 
-["Core 32-bit"]
-group = "Core"
-versions = ["1"]
-os = ["ubuntu-latest"]
-arch = "x86"
+# Core 32-bit dropped: Tracker→NNlib→BFloat16s LLVM soft-promote fails on i686
+# (JuliaMath/BFloat16s#127). Re-enable after that ships.
 
 [LineSearchesJL]
 versions = ["1", "lts"]
