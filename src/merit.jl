@@ -48,6 +48,11 @@ preallocated buffers. Built once by [`init_merit`](@ref) and reused across
 `fu_cache` holds the residual under [`ResidualMerit`](@ref) and the gradient
 under [`ObjectiveMerit`](@ref); in both cases it is left holding the quantity at
 the most recently evaluated `α`, which lets the caller reuse it.
+
+`jv_cache` holds the Jacobian-vector (or vector-Jacobian) product under
+[`ResidualMerit`](@ref) so the directional derivative can be formed in-place.
+It is `nothing` for [`ObjectiveMerit`](@ref), derivative-free searches, and
+scalar problems.
 """
 @concrete mutable struct MeritEvaluator
     merit <: AbstractMerit
@@ -56,6 +61,7 @@ the most recently evaluated `α`, which lets the caller reuse it.
     deriv_op
     u_cache
     fu_cache
+    jv_cache
     stats <: Union{SciMLBase.NLStats, Nothing}
     last_α
     last_ϕ
@@ -76,19 +82,20 @@ function init_merit(
         prob::AbstractNonlinearProblem, fu, u;
         autodiff = nothing, stats::Union{SciMLBase.NLStats, Nothing} = nothing,
         need_deriv::Bool = true
-    )
+)
     # Derivative-free searches must not be forced to build a Jacobian operator,
     # which would demand an AD backend they never use.
-    deriv_op = if need_deriv
-        last(construct_jvp_or_vjp_operator(prob, fu, u; autodiff))
+    jvp_op, vjp_op, deriv_op = if need_deriv
+        construct_jvp_or_vjp_operator(prob, fu, u; autodiff)
     else
-        nothing
+        nothing, nothing, nothing
     end
     @bb u_cache = similar(u)
     @bb fu_cache = similar(fu)
+    jv_cache = need_deriv ? residual_jv_cache(jvp_op, vjp_op, fu, u) : nothing
     nan = convert(promote_type(eltype(fu), eltype(u)), NaN)
     return MeritEvaluator(
-        ResidualMerit(), prob.f, prob.p, deriv_op, u_cache, fu_cache, stats,
+        ResidualMerit(), prob.f, prob.p, deriv_op, u_cache, fu_cache, jv_cache, stats,
         nan, nan, nan, false
     )
 end
@@ -97,7 +104,7 @@ function init_merit(
         prob::OptimizationProblem, u;
         autodiff = nothing, stats::Union{SciMLBase.NLStats, Nothing} = nothing,
         need_deriv::Bool = true
-    )
+)
     value, fg = if need_deriv
         objective_and_fused_gradient(prob.f, prob.p, u)
     else
@@ -107,7 +114,7 @@ function init_merit(
     @bb fu_cache = similar(u)
     nan = convert(real(eltype(u)), NaN)
     return MeritEvaluator(
-        ObjectiveMerit(), value, prob.p, fg, u_cache, fu_cache, stats,
+        ObjectiveMerit(), value, prob.p, fg, u_cache, fu_cache, nothing, stats,
         nan, nan, nan, false
     )
 end
@@ -124,13 +131,11 @@ function objective_and_fused_gradient(f::SciMLBase.AbstractOptimizationFunction,
     if f.fg !== nothing
         fg = f.fg
         applicable(fg, u, u, p) && return value, @closure((G, u, p) -> fg(G, u, p))
-        return value, @closure(
-                (G, u, p) -> begin
-                    ϕ, grad = fg(u, p)
-                    copyto!(G, grad)
-                    return ϕ
-                end
-            )
+        return value, @closure((G, u, p) -> begin
+            ϕ, grad = fg(u, p)
+            copyto!(G, grad)
+            return ϕ
+        end)
     end
 
     if f.grad !== nothing
@@ -138,20 +143,18 @@ function objective_and_fused_gradient(f::SciMLBase.AbstractOptimizationFunction,
         if applicable(g, u, u, p)
             return value, @closure((G, u, p) -> (g(G, u, p); f.f(u, p)))
         end
-        return value, @closure(
-                (G, u, p) -> begin
-                    copyto!(G, g(u, p))
-                    return f.f(u, p)
-                end
-            )
+        return value, @closure((G, u, p) -> begin
+            copyto!(G, g(u, p))
+            return f.f(u, p)
+        end)
     end
 
     throw(
         ArgumentError(
-            "`ObjectiveMerit` needs a gradient. Supply an `OptimizationFunction` with an \
+        "`ObjectiveMerit` needs a gradient. Supply an `OptimizationFunction` with an \
              analytic `grad`/`fg`, or one instantiated against an AD backend by \
              `OptimizationBase.instantiate_function`."
-        )
+    )
     )
 end
 
@@ -246,7 +249,7 @@ function _merit_ϕdϕ(::ResidualMerit, ev::MeritEvaluator, u, du, α)
     u_cache = ray_point!(ev, u, du, α, true)
     ev.fu_cache = evaluate_f!!(ev.f, ev.fu_cache, u_cache, ev.p)
     add_nf!(ev.stats)
-    dϕ = ev.deriv_op(du, u_cache, ev.fu_cache, ev.p)
+    dϕ = ev.deriv_op(ev.jv_cache, du, u_cache, ev.fu_cache, ev.p)
     ϕ = @fastmath norm(ev.fu_cache)^2 / 2
     ev.last_ϕ = ϕ
     ev.last_dϕ = dϕ
