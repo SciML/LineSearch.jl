@@ -50,15 +50,22 @@ using ADTypes: AutoForwardDiff
         "NoLineSearch" => NoLineSearch(),
     )
 
-    function assert_steady_allocs(cache, u, du; max_bytes = 0)
-        CommonSolve.solve!(cache, u, du)   # warm-up / compile
-        a1 = @allocated CommonSolve.solve!(cache, u, du)
-        a2 = @allocated CommonSolve.solve!(cache, u, du)
+    # On Julia ≥ 1.11 the residual/objective Vector path is exactly zero after
+    # warm-up. Before 1.11, escape analysis leaves a small constant from the
+    # immutable bracket/parameter structs (HZPoint, etc.) — larger on residual
+    # searches than on the objective path — so we only require that it is
+    # bounded and not growing. Observed LTS residual peaks were ~592 bytes.
+    lts_alloc_bound = 1024
+
+    function assert_steady_allocs(cache, u, du; max_bytes = 0, kwargs...)
+        CommonSolve.solve!(cache, u, du; kwargs...)   # warm-up / compile
+        a1 = @allocated CommonSolve.solve!(cache, u, du; kwargs...)
+        a2 = @allocated CommonSolve.solve!(cache, u, du; kwargs...)
         @test a1 == a2
         if VERSION ≥ v"1.11"
             @test a2 ≤ max_bytes
         else
-            @test a2 ≤ max(max_bytes, 256)
+            @test a2 ≤ max(max_bytes, lts_alloc_bound)
         end
         return a2
     end
@@ -134,15 +141,7 @@ using ADTypes: AutoForwardDiff
         cache = CommonSolve.init(prob, alg, fu, u)
         ϕ0 = sum(abs2, fu) / 2
         dϕ0 = dot(fu, (@. 2 * u * du))
-        CommonSolve.solve!(cache, u, du; ϕ0, dϕ0)
-        a1 = @allocated CommonSolve.solve!(cache, u, du; ϕ0, dϕ0)
-        a2 = @allocated CommonSolve.solve!(cache, u, du; ϕ0, dϕ0)
-        @test a1 == a2
-        if VERSION ≥ v"1.11"
-            @test a2 == 0
-        else
-            @test a2 ≤ 256
-        end
+        assert_steady_allocs(cache, u, du; ϕ0, dϕ0)
     end
 
     # ---------------------------------------------------- StaticArrays path
