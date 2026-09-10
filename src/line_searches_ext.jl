@@ -31,7 +31,7 @@ alg = LineSearchesJL(method = LineSearches.Static(), initial_alpha = 1.0)
 ```
 """
 struct LineSearchesJL{M, A, AD <: Union{Nothing, ADTypes.AbstractADType}} <:
-       AbstractLineSearchAlgorithm
+    AbstractLineSearchAlgorithm
     method::M
     initial_alpha::A
     autodiff::AD
@@ -70,7 +70,7 @@ end
 function CommonSolve.init(
         prob::AbstractNonlinearProblem, alg::LineSearchesJL, fu, u;
         stats::Union{SciMLBase.NLStats, Nothing} = nothing, autodiff = nothing, kwargs...
-)
+    )
     T = promote_type(eltype(fu), eltype(u))
     autodiff = autodiff !== nothing ? autodiff : alg.autodiff
 
@@ -143,7 +143,7 @@ end
 
 function SciMLBase.reinit!(
         cache::LineSearchesJLCache; p = missing, stats = missing, kwargs...
-)
+    )
     p !== missing && (cache.p = p)
     stats !== missing && (cache.stats = stats)
     cache.alpha = cache.initial_alpha

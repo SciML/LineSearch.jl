@@ -82,7 +82,7 @@ function init_merit(
         prob::AbstractNonlinearProblem, fu, u;
         autodiff = nothing, stats::Union{SciMLBase.NLStats, Nothing} = nothing,
         need_deriv::Bool = true
-)
+    )
     # Derivative-free searches must not be forced to build a Jacobian operator,
     # which would demand an AD backend they never use.
     jvp_op, vjp_op, deriv_op = if need_deriv
@@ -104,7 +104,7 @@ function init_merit(
         prob::OptimizationProblem, u;
         autodiff = nothing, stats::Union{SciMLBase.NLStats, Nothing} = nothing,
         need_deriv::Bool = true
-)
+    )
     value, fg = if need_deriv
         objective_and_fused_gradient(prob.f, prob.p, u)
     else
@@ -131,11 +131,13 @@ function objective_and_fused_gradient(f::SciMLBase.AbstractOptimizationFunction,
     if f.fg !== nothing
         fg = f.fg
         applicable(fg, u, u, p) && return value, @closure((G, u, p) -> fg(G, u, p))
-        return value, @closure((G, u, p) -> begin
-            ϕ, grad = fg(u, p)
-            copyto!(G, grad)
-            return ϕ
-        end)
+        return value, @closure(
+                (G, u, p) -> begin
+                    ϕ, grad = fg(u, p)
+                    copyto!(G, grad)
+                    return ϕ
+                end
+            )
     end
 
     if f.grad !== nothing
@@ -143,18 +145,20 @@ function objective_and_fused_gradient(f::SciMLBase.AbstractOptimizationFunction,
         if applicable(g, u, u, p)
             return value, @closure((G, u, p) -> (g(G, u, p); f.f(u, p)))
         end
-        return value, @closure((G, u, p) -> begin
-            copyto!(G, g(u, p))
-            return f.f(u, p)
-        end)
+        return value, @closure(
+                (G, u, p) -> begin
+                    copyto!(G, g(u, p))
+                    return f.f(u, p)
+                end
+            )
     end
 
     throw(
         ArgumentError(
-        "`ObjectiveMerit` needs a gradient. Supply an `OptimizationFunction` with an \
+            "`ObjectiveMerit` needs a gradient. Supply an `OptimizationFunction` with an \
              analytic `grad`/`fg`, or one instantiated against an AD backend by \
              `OptimizationBase.instantiate_function`."
-    )
+        )
     )
 end
 

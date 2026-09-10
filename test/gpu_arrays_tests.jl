@@ -6,7 +6,7 @@
 using LineSearch, Test
 using SciMLBase, CommonSolve, LinearAlgebra
 using SciMLBase: ReturnCode, NonlinearProblem, NonlinearFunction,
-                 OptimizationProblem, OptimizationFunction
+    OptimizationProblem, OptimizationFunction
 using JLArrays
 using StaticArrays
 using ADTypes: AutoForwardDiff
@@ -40,14 +40,14 @@ using ADTypes: AutoForwardDiff
         "HagerZhang" => HagerZhangLineSearch(),
         "MoreThuente" => MoreThuenteLineSearch(),
         "StrongWolfe" => StrongWolfeLineSearch(),
-        "BackTracking" => BackTracking()
+        "BackTracking" => BackTracking(),
     )
     ALL_NATIVE = (
         MERIT_ALGS...,
         "GoldenSection" => GoldenSection(),
         "LiFukushima" => LiFukushimaLineSearch(),
         "RobustNonMonotone" => RobustNonMonotoneLineSearch(),
-        "NoLineSearch" => NoLineSearch()
+        "NoLineSearch" => NoLineSearch(),
     )
 
     function assert_steady_allocs(cache, u, du; max_bytes = 0)
@@ -148,20 +148,20 @@ using ADTypes: AutoForwardDiff
     # ---------------------------------------------------- StaticArrays path
 
     @testset "StaticArrays residual solve! is non-allocating: $name" for (name, alg) in (
-        "HagerZhang" => HagerZhangLineSearch(),
-        "MoreThuente" => MoreThuenteLineSearch(),
-        "BackTracking" => BackTracking(),
-        "GoldenSection" => GoldenSection(),
-        "LiFukushima" => LiFukushimaLineSearch(nan_maxiters = nothing),
-        "StrongWolfe" => StrongWolfeLineSearch()
-    )
+            "HagerZhang" => HagerZhangLineSearch(),
+            "MoreThuente" => MoreThuenteLineSearch(),
+            "BackTracking" => BackTracking(),
+            "GoldenSection" => GoldenSection(),
+            "LiFukushima" => LiFukushimaLineSearch(nan_maxiters = nothing),
+            "StrongWolfe" => StrongWolfeLineSearch(),
+        )
         u = @SVector [1.5, -0.5, 2.0]
         fu = Fres(u, nothing)
         du = .-(@. 2 * u * fu)
         nf = NonlinearFunction{false}(Fres; jvp)
         prob = NonlinearProblem(nf, u)
         kwargs = alg isa StrongWolfeLineSearch ?
-                 (; grad_f = (x, p) -> (@. 2 * x * (x^2 - 1))) : (;)
+            (; grad_f = (x, p) -> (@. 2 * x * (x^2 - 1))) : (;)
         cache = CommonSolve.init(prob, alg, fu, u; kwargs...)
         sol = CommonSolve.solve!(cache, u, du)
         @test sol.retcode == ReturnCode.Success
@@ -189,9 +189,9 @@ using ADTypes: AutoForwardDiff
 
         # Match the host result for the merit-driven searches.
         if alg isa Union{
-            HagerZhangLineSearch, MoreThuenteLineSearch,
-            StrongWolfeLineSearch, BackTracking
-        }
+                HagerZhangLineSearch, MoreThuenteLineSearch,
+                StrongWolfeLineSearch, BackTracking,
+            }
             host = CommonSolve.solve!(
                 CommonSolve.init(
                     NonlinearProblem(NonlinearFunction{true}(Fres!; jvp = jvp!), uh),
@@ -210,8 +210,10 @@ using ADTypes: AutoForwardDiff
         @test a1 == a2 || abs(Int(a1) - Int(a2)) ≤ 512
     end
 
-    @testset "JLArray objective merit works without scalar indexing: $name" for (name, alg) in (MERIT_ALGS..., "GoldenSection" =>
-        GoldenSection())
+    @testset "JLArray objective merit works without scalar indexing: $name" for (name, alg) in (
+            MERIT_ALGS..., "GoldenSection" =>
+                GoldenSection(),
+        )
         uh = [1.5, -0.5, 2.0]
         gh = zeros(3)
         obj_grad!(gh, uh, nothing)
