@@ -50,16 +50,9 @@ function BackTracking(;
 end
 
 @concrete mutable struct BackTrackingCache <: AbstractLineSearchCache
-    f
-    p
-    ϕ
-    ϕdϕ
+    merit_eval
     alpha
     initial_alpha
-    deriv_op
-    u_cache
-    fu_cache
-    stats <: Union{SciMLBase.NLStats, Nothing}
     alg <: BackTracking
     maxiters::Int
 end
@@ -70,51 +63,37 @@ function CommonSolve.init(
     )
     T = promote_type(eltype(fu), eltype(u))
     autodiff = autodiff !== nothing ? autodiff : alg.autodiff
-
-    _, _, deriv_op = construct_jvp_or_vjp_operator(prob, fu, u; autodiff)
-
-    @bb u_cache = similar(u)
-    @bb fu_cache = similar(fu)
-
-    ϕ = @closure (
-        f, p, u, du, α, u_cache,
-        fu_cache,
-    ) -> begin
-        @bb @. u_cache = u + α * du
-        fu_cache = evaluate_f!!(f, fu_cache, u_cache, p)
-        add_nf!(stats)
-        return @fastmath norm(fu_cache)^2 / 2
-    end
-
-    ϕdϕ = @closure (
-        f, p, u, du, α, u_cache, fu_cache,
-        deriv_op,
-    ) -> begin
-        @bb @. u_cache = u + α * du
-        fu_cache = evaluate_f!!(f, fu_cache, u_cache, p)
-        add_nf!(stats)
-        deriv = deriv_op(du, u_cache, fu_cache, p)
-        obj = @fastmath norm(fu_cache)^2 / 2
-        return obj, deriv
-    end
-
-    u_norm = @fastmath norm(u, Inf)
-    alpha = min(alg.initial_alpha, alg.maxstep / u_norm)
-
-    return BackTrackingCache(
-        prob.f, prob.p, ϕ, ϕdϕ, T(alpha), T(alg.initial_alpha), deriv_op,
-        u_cache, fu_cache, stats, alg, alg.maxiters
-    )
+    ev = init_merit(prob, fu, u; autodiff, stats)
+    return build_backtracking_cache(ev, alg, u, T)
 end
 
-function CommonSolve.solve!(cache::BackTrackingCache, u, du)
-    T = promote_type(eltype(du), eltype(u))
-    ϕ = @closure α -> cache.ϕ(cache.f, cache.p, u, du, α, cache.u_cache, cache.fu_cache)
-    ϕdϕ = @closure α -> cache.ϕdϕ(
-        cache.f, cache.p, u, du, α, cache.u_cache, cache.fu_cache, cache.deriv_op
+function CommonSolve.init(
+        prob::OptimizationProblem, alg::BackTracking, u;
+        stats::Union{SciMLBase.NLStats, Nothing} = nothing, kwargs...
     )
+    ev = init_merit(prob, u; stats)
+    return build_backtracking_cache(ev, alg, u, real(eltype(u)))
+end
 
-    ϕ₀, dϕ₀ = ϕdϕ(zero(T))
+function CommonSolve.init(prob::OptimizationProblem, alg::BackTracking, gu, u; kwargs...)
+    return CommonSolve.init(prob, alg, u; kwargs...)
+end
+
+function build_backtracking_cache(ev, alg::BackTracking, u, ::Type{T}) where {T}
+    u_norm = @fastmath norm(u, Inf)
+    alpha = min(alg.initial_alpha, alg.maxstep / u_norm)
+    return BackTrackingCache(ev, T(alpha), T(alg.initial_alpha), alg, alg.maxiters)
+end
+
+function CommonSolve.solve!(
+        cache::BackTrackingCache, u, du; ϕ0 = nothing, dϕ0 = nothing
+    )
+    T = promote_type(eltype(du), eltype(u))
+    ev = cache.merit_eval
+    invalidate!(ev)
+    ϕ = @closure α -> merit_ϕ(ev, u, du, α)
+
+    ϕ₀, dϕ₀ = merit_ϕdϕ_at_zero(ev, u, du, ϕ0, dϕ0)
     α₁, α₂ = cache.alpha, cache.alpha
     ϕx₀, ϕx₁ = ϕ₀, ϕ(α₁)
 
@@ -128,7 +107,7 @@ function CommonSolve.solve!(cache::BackTrackingCache, u, du)
     end
 
     ϕx₁ ≤ ϕ₀ + T(cache.alg.c_1) * α₂ * dϕ₀ &&
-        return LineSearchSolution(α₂, ReturnCode.Success)
+        return solution_at!(ev, u, du, α₂, ReturnCode.Success)
     α_tmp = -(dϕ₀ * α₂^2) / (2 * (ϕx₁ - ϕ₀ - dϕ₀ * α₂))
     α₁ = α₂
     α_tmp = min(α_tmp, α₂ * T(cache.alg.ρ_hi))
@@ -137,7 +116,7 @@ function CommonSolve.solve!(cache::BackTrackingCache, u, du)
 
     for _ in (iteration + 1):(cache.maxiters)
         ϕx₁ ≤ ϕ₀ + T(cache.alg.c_1) * α₂ * dϕ₀ &&
-            return LineSearchSolution(α₂, ReturnCode.Success)
+            return solution_at!(ev, u, du, α₂, ReturnCode.Success)
 
         α_tmp = compute_alpha_backtracking(cache.alg.order, T, dϕ₀, ϕ₀, ϕx₀, ϕx₁, α₁, α₂)
 
@@ -148,7 +127,7 @@ function CommonSolve.solve!(cache::BackTrackingCache, u, du)
         ϕx₀, ϕx₁ = ϕx₁, ϕ(α₂)
     end
 
-    return LineSearchSolution(α₂, ReturnCode.Failure)
+    return solution_at!(ev, u, du, α₂, ReturnCode.Failure)
 end
 
 @inline function compute_alpha_backtracking(
@@ -173,9 +152,10 @@ end
 function SciMLBase.reinit!(
         cache::BackTrackingCache; p = missing, stats = missing, kwargs...
     )
-    p !== missing && (cache.p = p)
-    stats !== missing && (cache.stats = stats)
+    SciMLBase.reinit!(cache.merit_eval; p, stats)
     cache.alpha = cache.initial_alpha
     # NOTE: Don't zero out the stats here, since we don't own it
     return cache
 end
+
+set_initial_step!(cache::BackTrackingCache, α) = (cache.alpha = oftype(cache.alpha, α); cache)
