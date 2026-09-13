@@ -239,9 +239,13 @@ end
 
 function _merit_ϕ(::ResidualMerit, ev::MeritEvaluator, u, du, α)
     u_cache = ray_point!(ev, u, du, α, false)
-    ev.fu_cache = evaluate_f!!(ev.f, ev.fu_cache, u_cache, ev.p)
+    return merit_value!(ev.merit, ev, u_cache)
+end
+
+function merit_value!(::ResidualMerit, ev::MeritEvaluator, u)
+    ev.fu_cache = evaluate_f!!(ev.f, ev.fu_cache, u, ev.p)
     add_nf!(ev.stats)
-    ϕ = @fastmath norm(ev.fu_cache)^2 / 2
+    ϕ = norm(ev.fu_cache)^2 / 2
     ev.last_ϕ = ϕ
     return ϕ
 end
@@ -262,8 +266,12 @@ end
 
 function _merit_ϕ(::ObjectiveMerit, ev::MeritEvaluator, u, du, α)
     u_cache = ray_point!(ev, u, du, α, false)
+    return merit_value!(ev.merit, ev, u_cache)
+end
+
+function merit_value!(::ObjectiveMerit, ev::MeritEvaluator, u)
     add_nf!(ev.stats)
-    ϕ = ev.f(u_cache, ev.p)
+    ϕ = ev.f(u, ev.p)
     ev.last_ϕ = ϕ
     return ϕ
 end

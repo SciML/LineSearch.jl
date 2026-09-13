@@ -71,6 +71,7 @@ using .CustomOptimizer
                     NoLineSearch(0.001),
                     GoldenSection(; tol = 1.0e-4),
                     BackTracking(; order = Val(3), autodiff),
+                    ArmijoLineSearch(; autodiff),
                     BackTracking(; order = Val(2), autodiff),
                     StrongWolfeLineSearch(; autodiff),
                 )
@@ -95,6 +96,7 @@ using .CustomOptimizer
                     NoLineSearch(0.001),
                     GoldenSection(; tol = 1.0e-4),
                     BackTracking(; order = Val(3), autodiff),
+                    ArmijoLineSearch(; autodiff),
                     BackTracking(; order = Val(2), autodiff),
                     StrongWolfeLineSearch(; autodiff),
                 )

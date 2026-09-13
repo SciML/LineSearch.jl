@@ -42,6 +42,9 @@ RobustNonMonotoneLineSearch
 
 ```@docs
 BackTracking
+ArmijoLineSearch
+ProjectedBackTracking
+get_trial
 StrongWolfeLineSearch
 ```
 
@@ -51,3 +54,10 @@ StrongWolfeLineSearch
 HagerZhangLineSearch
 MoreThuenteLineSearch
 ```
+
+`ArmijoLineSearch` reduces the step by a fixed factor, whereas `BackTracking` uses
+quadratic or cubic interpolation. Both enforce sufficient decrease; neither
+enforces a Wolfe curvature condition. `ProjectedBackTracking` uses the actual
+box-projected displacement in that condition and can cross multiple bound hits.
+Its cached trial point must be used by the caller, since the accepted path is
+piecewise linear rather than a ray.
