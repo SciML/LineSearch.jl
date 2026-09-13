@@ -36,6 +36,7 @@ include("utils.jl")
 include("merit.jl")
 
 include("backtracking.jl")
+include("armijo.jl")
 include("hager_zhang.jl")
 include("more_thuente.jl")
 include("golden_section.jl")
@@ -88,6 +89,7 @@ end
 export LineSearchSolution
 export set_initial_step!
 
+export ArmijoLineSearch, ProjectedBackTracking, get_trial
 export BackTracking
 export GoldenSection
 export NoLineSearch, LiFukushimaLineSearch, RobustNonMonotoneLineSearch, StrongWolfeLineSearch

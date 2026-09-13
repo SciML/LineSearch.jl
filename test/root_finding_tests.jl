@@ -107,6 +107,7 @@ using .RootFinding
             )
             @testset "method: $(nameof(typeof(method)))" for method in (
                     BackTracking(; order = Val(3), autodiff),
+                    ArmijoLineSearch(; autodiff),
                     BackTracking(; order = Val(2), autodiff),
                     StrongWolfeLineSearch(; autodiff),
                 )
@@ -141,6 +142,7 @@ using .RootFinding
             )
             @testset "method: $(nameof(typeof(method)))" for method in (
                     BackTracking(; order = Val(3), autodiff),
+                    ArmijoLineSearch(; autodiff),
                     BackTracking(; order = Val(2), autodiff),
                     StrongWolfeLineSearch(; autodiff),
                 )
