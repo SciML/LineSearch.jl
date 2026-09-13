@@ -67,6 +67,7 @@ Armijo backtracking along the box-projected path `P(u + α * du)`. Initialize wi
 `init(prob, alg, fu, u; lb = prob.lb, ub = prob.ub)` for a nonlinear problem, or
 `init(prob, alg, u; lb = prob.lb, ub = prob.ub)` for an optimization problem.
 Bounds may be scalars, arrays with the same axes as `u`, or `nothing` (unbounded).
+They are rounded inward to the state element type to keep trial evaluations feasible.
 The starting point must be feasible and the state must be real floating point.
 
 Call `solve!(cache, u, du; gradient, ϕ0 = nothing)` with the merit gradient at `u`:
@@ -132,15 +133,22 @@ end
 function build_armijo_cache(ev, alg, u, lb, ub)
     T = eltype(u)
     T <: AbstractFloat || throw(ArgumentError("Armijo searches require real floating-point states."))
-    lb = lb === nothing ? T(-Inf) : lb
-    ub = ub === nothing ? T(Inf) : ub
+    lb = lb === nothing ? T(-Inf) : inward_bound.(lb, zero(T), true)
+    ub = ub === nothing ? T(Inf) : inward_bound.(ub, zero(T), false)
     for bound in (lb, ub)
         bound isa Number || axes(bound) == axes(u) || throw(DimensionMismatch("Bounds must have the same axes as u."))
     end
     all(lb .<= ub) || throw(ArgumentError("Lower bounds must not exceed upper bounds."))
     all(isfinite, u) && all(lb .<= u .<= ub) || throw(ArgumentError("The starting point must be finite and feasible."))
     @bb step = similar(u)
-    return ArmijoCache(ev, step, copy(lb), copy(ub), T(alg.initial_alpha), alg)
+    return ArmijoCache(ev, step, lb, ub, T(alg.initial_alpha), alg)
+end
+
+function inward_bound(bound, ::T, lower::Bool) where {T}
+    value = T(bound)
+    lower && value < bound && return nextfloat(value)
+    !lower && value > bound && return prevfloat(value)
+    return value
 end
 
 function CommonSolve.solve!(cache::ArmijoCache, u, du; gradient = nothing, ϕ0 = nothing, dϕ0 = nothing)

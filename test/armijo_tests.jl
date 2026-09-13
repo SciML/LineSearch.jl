@@ -118,12 +118,26 @@ using LinearAlgebra: dot
         @test solve!(cache, [1.0], [-4.0]).step_size == 0.25
     end
 
+    @testset "Mixed-precision bounds remain feasible" begin
+        for (lb, ub, target) in ((-Inf, 0.1, 1.0f0), (-0.1, Inf, -1.0f0))
+            u = Float32[0]
+            f(u, p) = (@assert lb <= only(u) <= ub; u .- target)
+            prob = NonlinearProblem(f, u; lb, ub)
+            cache = init(prob, ProjectedBackTracking(), Float32[-target], u)
+            sol = solve!(cache, u, Float32[target]; gradient = Float32[-target], ϕ0 = 0.5f0)
+            @test SciMLBase.successful_retcode(sol.retcode)
+            @test lb <= only(get_trial(cache).u) <= ub
+            @test eltype(get_trial(cache).u) === Float32
+            @test sol.step_size === 1.0f0
+        end
+    end
+
     @testset "GPUArrays without scalar indexing" begin
         u = JLArray([1.0, 1.0])
         f!(out, u, p) = (out .= u)
         prob = NonlinearProblem(f!, u)
         for alg in (ArmijoLineSearch(), ProjectedBackTracking())
-            cache = init(prob, alg, u, u; need_deriv = false, lb = 0.0, ub = 2.0)
+            cache = init(prob, alg, u, u; need_deriv = false, lb = 0 .* u, ub = 2 .* u)
             sol = solve!(cache, u, -4u; gradient = u, ϕ0 = 1.0)
             @test SciMLBase.successful_retcode(sol.retcode)
             @test Array(get_trial(cache).u) == zeros(2)
