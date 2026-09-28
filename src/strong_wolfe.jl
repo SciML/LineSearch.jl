@@ -20,6 +20,8 @@ Algorithms 3.5 and 3.6.
 
 `maxiters` bounds the outer bracketing loop (Alg. 3.5). `zoom_maxiters` bounds
 the inner zoom loop (Alg. 3.6) independently.
+A step blocked at `α_max` that satisfies Armijo is accepted without the
+curvature condition.
 
 # Merit function
 
@@ -257,6 +259,9 @@ end
                 ϕ_i, dϕ_i, ϕ_prev, dϕ_prev, c1, c2, zoom_maxiters
             )
             α_out, ok, done = α_z, ok_z, true
+        elseif α_i >= α_max
+            # Blocked at the cap while still descending: accept on Armijo alone.
+            α_out, ok, done = α_i, true, true
         else
             α_prev = α_i
             ϕ_prev = ϕ_i

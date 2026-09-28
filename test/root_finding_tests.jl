@@ -236,13 +236,13 @@ end
     end
 
     @testset "failure returns α_init not last trial α" begin
-        # Start past the root so a short α_max cannot reach it; search fails at α_max.
+        # Bracketing runs out of iterations before reaching the root.
         u0 = 2.0
         α_init = 0.05
         nlp = NonlinearProblem(r, u0)
         cache = init(
             nlp,
-            StrongWolfeLineSearch(; c2 = 1.0e-8, α_init, α_max = 0.2, maxiters = 20),
+            StrongWolfeLineSearch(; c2 = 1.0e-8, α_init, α_max = 4.0, maxiters = 3),
             r(u0, nothing), u0; grad_f
         )
 
