@@ -45,17 +45,18 @@ function dfsane(f, u0, p, maxiters; unit_step = false, abstol = 1.0e-10)
     ReactantCore.@trace track_numbers = false while (nsteps < maxiters) & !done
         du = -σ .* fu
         sol = solve!(ls, u, du)
-        α = ifelse(unit_step, one(σ), sol.step_size)
+        ls_failed = !unit_step & !SciMLBase.successful_retcode(sol.retcode)
+        α = ifelse(unit_step, one(σ), ifelse(ls_failed, zero(σ), sol.step_size))
         u_new = u .+ α .* du
         fu_new = f(u_new, p)
         σ = spectral_coefficient(u_new .- u, fu_new .- fu)
         u = u_new
         fu = fu_new
         LineSearch.callback_into_cache!(ls, fu)
-        done = maximum(abs, fu) ≤ abstol
+        done = (maximum(abs, fu) ≤ abstol) | ls_failed
         nsteps = nsteps + 1
     end
-    return u, nsteps, done
+    return u, nsteps, maximum(abs, fu) ≤ abstol
 end
 
 # Expected steps and return codes are those of the host loop in LineSearch v0.1.19.
@@ -127,6 +128,31 @@ end
     @test Float64(α_jit) == α_expected
     @test Bool(ok_jit) == ok_expected
     @test Array(history_jit) == history_host
+end
+
+# NonlinearSolve's DFSane checks the line search with `SciMLBase.successful_retcode`.
+function checked_line_search(f, u, du, p, alg)
+    prob = NonlinearProblem(f, u, p)
+    fu = residual(f, u, p)
+    cache = init(prob, alg, fu, u)
+    LineSearch.callback_into_cache!(cache, fu)
+    sol = solve!(cache, u, du)
+    return sol, SciMLBase.successful_retcode(sol.retcode)
+end
+
+@testset "successful_retcode of the compiled return code: $name" for (name, alg, ok_expected) in (
+        ("success", RobustNonMonotoneLineSearch(), true),
+        ("failure", RobustNonMonotoneLineSearch(; maxiters = 1), false),
+    )
+    u = [3.0, -2.0]
+    du = -cube(u, nothing)
+    sol_host, ok_host = checked_line_search(cube, u, du, nothing, alg)
+    @test ok_host == ok_expected
+    sol_jit, ok_jit = @jit checked_line_search(
+        cube, Reactant.to_rarray(u), Reactant.to_rarray(du), nothing, alg
+    )
+    @test Bool(ok_jit) == ok_expected
+    @test SciMLBase.successful_retcode(sol_jit.retcode) == ok_expected
 end
 
 @testset "compiled DF-SANE on u.^3 .- 2" begin
