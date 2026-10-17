@@ -1,133 +1,85 @@
 # Here we write out Newton Raphson and test integration with LineSearch.jl. Main tests are
 # over at NonlinearSolve.jl and SimpleNonlinearSolve.jl
-# Note: Enzyme tests are in a separate test group (test/enzyme/)
-@testsetup module RootFinding
+# Note: Enzyme tests are in a separate test group (test/enzyme/), LineSearches.jl tests in test/linesearchesjl/
+using LineSearch, Test
 
-using SciMLBase, DifferentiationInterface, ForwardDiff
-using SciMLBase: AbstractNonlinearProblem
-const DI = DifferentiationInterface
+module RootFinding
 
-function newton_raphson(prob::AbstractNonlinearProblem, ls)
-    if SciMLBase.isinplace(prob)
-        return newton_raphson_iip(prob, ls)
-    else
-        return newton_raphson_oop(prob, ls)
+    using SciMLBase, DifferentiationInterface, ForwardDiff
+    using SciMLBase: AbstractNonlinearProblem
+    const DI = DifferentiationInterface
+
+    function newton_raphson(prob::AbstractNonlinearProblem, ls)
+        if SciMLBase.isinplace(prob)
+            return newton_raphson_iip(prob, ls)
+        else
+            return newton_raphson_oop(prob, ls)
+        end
     end
-end
 
-function newton_raphson_oop(prob::AbstractNonlinearProblem, ls)
-    u = copy(prob.u0)
-    fu = prob.f(u, prob.p)
-
-    ls_cache = init(prob, ls, fu, u)
-
-    alphas = Float64[]
-    iter = 0
-    for _ in 1:100
-        iter += 1
-
-        maximum(abs, fu) < 1.0e-8 && return true, fu, u, iter, alphas
-
-        J = DI.jacobian(prob.f, AutoForwardDiff(), u, Constant(prob.p))
-        δu = -J \ fu
-
-        ls_sol = solve!(ls_cache, u, δu)
-
-        push!(alphas, ls_sol.step_size)
-        @. u = u + ls_sol.step_size * δu
-
+    function newton_raphson_oop(prob::AbstractNonlinearProblem, ls)
+        u = copy(prob.u0)
         fu = prob.f(u, prob.p)
+
+        ls_cache = init(prob, ls, fu, u)
+
+        alphas = Float64[]
+        iter = 0
+        for _ in 1:100
+            iter += 1
+
+            maximum(abs, fu) < 1.0e-8 && return true, fu, u, iter, alphas
+
+            J = DI.jacobian(prob.f, AutoForwardDiff(), u, Constant(prob.p))
+            δu = -J \ fu
+
+            ls_sol = solve!(ls_cache, u, δu)
+
+            push!(alphas, ls_sol.step_size)
+            @. u = u + ls_sol.step_size * δu
+
+            fu = prob.f(u, prob.p)
+        end
+
+        return false, fu, u, iter, alphas
     end
 
-    return false, fu, u, iter, alphas
-end
-
-function newton_raphson_iip(prob::AbstractNonlinearProblem, ls)
-    u = copy(prob.u0)
-    fu = similar(u)
-    fu2 = similar(u)
-    prob.f(fu, u, prob.p)
-
-    ls_cache = init(prob, ls, fu, u)
-
-    alphas = Float64[]
-    iter = 0
-    for _ in 1:100
-        iter += 1
-
-        maximum(abs, fu) < 1.0e-8 && return true, fu, u, iter, alphas
-
-        J = DI.jacobian(prob.f, fu2, AutoForwardDiff(), u, Constant(prob.p))
-        δu = -J \ fu
-
-        ls_sol = solve!(ls_cache, u, δu)
-
-        push!(alphas, ls_sol.step_size)
-        @. u = u + ls_sol.step_size * δu
-
+    function newton_raphson_iip(prob::AbstractNonlinearProblem, ls)
+        u = copy(prob.u0)
+        fu = similar(u)
+        fu2 = similar(u)
         prob.f(fu, u, prob.p)
-    end
 
-    return false, fu, u, iter, alphas
-end
+        ls_cache = init(prob, ls, fu, u)
 
-export newton_raphson
+        alphas = Float64[]
+        iter = 0
+        for _ in 1:100
+            iter += 1
 
-end
+            maximum(abs, fu) < 1.0e-8 && return true, fu, u, iter, alphas
 
-@testitem "LineSearches.jl: Newton Raphson" tags = [:linesearchesjl] setup = [RootFinding] begin
-    using LineSearches, SciMLBase
-    using ADTypes, Tracker, ForwardDiff, Zygote, ReverseDiff, FiniteDiff
+            J = DI.jacobian(prob.f, fu2, AutoForwardDiff(), u, Constant(prob.p))
+            δu = -J \ fu
 
-    @testset "OOP Problem" begin
-        nlf(x, p) = x .^ 2 .- p
-        nlp = NonlinearProblem(nlf, [-1.0, 1.0], [3.0])
+            ls_sol = solve!(ls_cache, u, δu)
 
-        @testset for autodiff in (
-                AutoTracker(), AutoForwardDiff(), AutoZygote(),
-                AutoReverseDiff(), AutoFiniteDiff(),
-            )
-            @testset "method: $(nameof(typeof(method)))" for method in (
-                    LineSearches.BackTracking(; order = 3),
-                    StrongWolfe(),
-                    HagerZhang(),
-                    MoreThuente(),
-                    Static(),
-                )
-                linesearch = LineSearchesJL(; method, autodiff)
-                converged, fu, u, iter, alphas = newton_raphson(nlp, linesearch)
+            push!(alphas, ls_sol.step_size)
+            @. u = u + ls_sol.step_size * δu
 
-                @test fu ≈ [0.0, 0.0] atol = 1.0e-3
-                @test abs.(u) ≈ sqrt.([3.0, 3.0]) atol = 1.0e-3
-            end
+            prob.f(fu, u, prob.p)
         end
+
+        return false, fu, u, iter, alphas
     end
 
-    @testset "In-Place Problem" begin
-        nlf(dx, x, p) = (dx .= x .^ 2 .- p)
-        nlp = NonlinearProblem(nlf, [-1.0, 1.0], [3.0])
+    export newton_raphson
 
-        @testset for autodiff in (
-                AutoForwardDiff(), AutoReverseDiff(), AutoFiniteDiff(),
-            )
-            @testset "method: $(nameof(typeof(method)))" for method in (
-                    LineSearches.BackTracking(; order = 3),
-                    StrongWolfe(),
-                    HagerZhang(),
-                    MoreThuente(),
-                    Static(),
-                )
-                linesearch = LineSearchesJL(; method, autodiff)
-                converged, fu, u, iter, alphas = newton_raphson(nlp, linesearch)
-
-                @test fu ≈ [0.0, 0.0] atol = 1.0e-3
-                @test abs.(u) ≈ sqrt.([3.0, 3.0]) atol = 1.0e-3
-            end
-        end
-    end
 end
 
-@testitem "Native Line Search: Newton Raphson" tags = [:core] setup = [RootFinding] begin
+using .RootFinding
+
+@testset "Native Line Search: Newton Raphson" begin
     using SciMLBase
     using ADTypes, Tracker, ForwardDiff, Zygote, ReverseDiff, FiniteDiff
 
@@ -138,6 +90,7 @@ end
         @testset "method: $(nameof(typeof(method)))" for method in (
                 LiFukushimaLineSearch(),
                 NoLineSearch(0.5),
+                GoldenSection(; tol = 1.0e-4),
                 RobustNonMonotoneLineSearch(),
                 RobustNonMonotoneLineSearch(; M = 1), #strictly monotonous case
                 RobustNonMonotoneLineSearch(; M = 15),
@@ -154,7 +107,9 @@ end
             )
             @testset "method: $(nameof(typeof(method)))" for method in (
                     BackTracking(; order = Val(3), autodiff),
+                    ArmijoLineSearch(; autodiff),
                     BackTracking(; order = Val(2), autodiff),
+                    StrongWolfeLineSearch(; autodiff),
                 )
                 converged, fu, u, iter, alphas = newton_raphson(nlp, method)
 
@@ -171,6 +126,7 @@ end
         @testset "method: $(nameof(typeof(method)))" for method in (
                 LiFukushimaLineSearch(),
                 NoLineSearch(0.5),
+                GoldenSection(; tol = 1.0e-4),
                 RobustNonMonotoneLineSearch(),
                 RobustNonMonotoneLineSearch(; M = 1), #strictly monotonous case
                 RobustNonMonotoneLineSearch(; M = 15),
@@ -186,7 +142,9 @@ end
             )
             @testset "method: $(nameof(typeof(method)))" for method in (
                     BackTracking(; order = Val(3), autodiff),
+                    ArmijoLineSearch(; autodiff),
                     BackTracking(; order = Val(2), autodiff),
+                    StrongWolfeLineSearch(; autodiff),
                 )
                 converged, fu, u, iter, alphas = newton_raphson(nlp, method)
 
@@ -194,5 +152,103 @@ end
                 @test abs.(u) ≈ sqrt.([3.0, 3.0]) atol = 1.0e-3
             end
         end
+    end
+end
+
+@testset "Native Strong Wolfe edge cases" begin
+    quadratic_eval(α) = (0.5 * (α - 1.0)^2, α - 1.0)
+
+    @testset "initial convergence" begin
+        ϕ_0, dϕ_0 = quadratic_eval(0.0)
+        α, ok = LineSearch._sw_search(quadratic_eval, ϕ_0, dϕ_0, 1.0e-4, 0.9, 1.0, 4.0, 10, 10)
+
+        @test ok
+        @test α ≈ 1.0
+    end
+
+    @testset "initial need for bracketing" begin
+        ϕ_0, dϕ_0 = quadratic_eval(0.0)
+        α, ok = LineSearch._sw_search(
+            quadratic_eval, ϕ_0, dϕ_0, 1.0e-4, 0.1, 0.25, 4.0, 10, 10
+        )
+
+        @test ok
+        @test α ≈ 1.0
+        @test α > 0.25
+    end
+
+    @testset "initial point is on the upward slope" begin
+        uphill_eval(α) = (0.5 * (α + 1.0)^2, α + 1.0)
+        ϕ_0, dϕ_0 = uphill_eval(0.0)
+        α, ok = LineSearch._sw_search(uphill_eval, ϕ_0, dϕ_0, 1.0e-4, 0.9, 1.0, 4.0, 10, 10)
+
+        @test !ok
+        @test α == 0.0
+    end
+
+    @testset "initial trial has already passed the minimum" begin
+        ϕ_0, dϕ_0 = quadratic_eval(0.0)
+        α, ok = LineSearch._sw_search(
+            quadratic_eval, ϕ_0, dϕ_0, 1.0e-4, 0.1, 3.0, 4.0, 10, 10
+        )
+
+        @test ok
+        @test α ≈ 1.0
+        @test α < 3.0
+    end
+
+    @testset "nonfinite trial values" begin
+        nonfinite_eval(α) = α > 2.0 ? (Inf, Inf) : quadratic_eval(α)
+        ϕ_0, dϕ_0 = nonfinite_eval(0.0)
+        α, ok = LineSearch._sw_search(
+            nonfinite_eval, ϕ_0, dϕ_0, 1.0e-4, 0.1, 3.0, 4.0, 10, 10
+        )
+
+        @test ok
+        @test isfinite(α)
+        @test 0.0 < α <= 2.0
+    end
+end
+
+@testset "Static Strong Wolfe residual mode" begin
+    using CommonSolve: init, solve!
+    using SciMLBase: NonlinearProblem, ReturnCode
+
+    # Residual r(u)=u-1; merit ½‖r‖². Static path expects grad_f = Jᵀr = u-1.
+    r(u, p) = u - 1
+    grad_f(u, p) = u - 1
+
+    @testset "successful residual search" begin
+        u0 = 0.0
+        nlp = NonlinearProblem(r, u0)
+        cache = init(
+            nlp, StrongWolfeLineSearch(; c2 = 0.1, α_init = 0.1, α_max = 4.0),
+            r(u0, nothing), u0; grad_f
+        )
+
+        @test cache isa LineSearch.StaticStrongWolfeLineSearchCache
+        @test cache.mode isa LineSearch._ResidualMerit
+
+        du = -grad_f(u0, nothing)
+        sol = solve!(cache, u0, du)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.step_size ≈ 1.0
+    end
+
+    @testset "failure returns α_init not last trial α" begin
+        # Bracketing runs out of iterations before reaching the root.
+        u0 = 2.0
+        α_init = 0.05
+        nlp = NonlinearProblem(r, u0)
+        cache = init(
+            nlp,
+            StrongWolfeLineSearch(; c2 = 1.0e-8, α_init, α_max = 4.0, maxiters = 3),
+            r(u0, nothing), u0; grad_f
+        )
+
+        du = -grad_f(u0, nothing)
+        sol = solve!(cache, u0, du)
+        @test sol.retcode == ReturnCode.Failure
+        @test sol.step_size == α_init
     end
 end

@@ -1,0 +1,343 @@
+"""
+    StrongWolfeLineSearch(; autodiff = nothing, c1 = 1e-4, c2 = 0.9,
+        α_init = 1.0, α_max = 65536.0, maxiters::Int = 10,
+        zoom_maxiters::Int = 10)
+
+Strong Wolfe line search satisfying both Armijo (sufficient decrease) and
+curvature conditions. Based on Nocedal & Wright, "Numerical Optimization" (2006),
+Algorithms 3.5 and 3.6.
+
+# Keyword Arguments
+
+- `autodiff`: automatic differentiation backend used to compute directional
+  derivatives when analytic jacobian/JVP/VJP information is unavailable.
+- `c1`: Armijo sufficient-decrease coefficient.
+- `c2`: curvature-condition coefficient.
+- `α_init`: initial trial step length.
+- `α_max`: maximum trial step length.
+- `maxiters`: maximum iterations for the outer bracketing loop.
+- `zoom_maxiters`: maximum iterations for the inner zoom loop.
+
+`maxiters` bounds the outer bracketing loop (Alg. 3.5). `zoom_maxiters` bounds
+the inner zoom loop (Alg. 3.6) independently.
+A step blocked at `α_max` that satisfies Armijo is accepted without the
+curvature condition.
+
+# Merit function
+
+The static path (`SArray` or `Number` states, usable inside GPU kernels) and the
+allocating path share the same merit by problem type:
+
+- `AbstractNonlinearProblem` uses the residual merit `½‖f(u)‖²`.
+- `OptimizationProblem` uses the objective `f(u)` directly, with gradient from
+  `prob.f.grad` (out-of-place `grad(u, p)` on the `OptimizationFunction`).
+  `SArray`/`Number` is allocation-free; other states (e.g. `Vector`) allocate.
+
+# Examples
+
+```julia
+using ADTypes
+using LineSearch
+
+alg = StrongWolfeLineSearch(autodiff = AutoForwardDiff(), c1 = 1e-4, c2 = 0.9)
+```
+"""
+@kwdef @concrete struct StrongWolfeLineSearch <: AbstractLineSearchAlgorithm
+    autodiff = nothing
+    c1 = 1.0e-4
+    c2 = 0.9
+    α_init = 1.0
+    α_max = 65536.0
+    maxiters::Int = 10
+    zoom_maxiters::Int = 10
+end
+
+@concrete mutable struct StrongWolfeLineSearchCache <: AbstractLineSearchCache
+    merit_eval
+    c1
+    c2
+    α
+    α_max
+    maxiters::Int
+    zoom_maxiters::Int
+    alg <: StrongWolfeLineSearch
+end
+
+struct _ResidualMerit end
+struct _ScalarObjective end
+
+@concrete struct StaticStrongWolfeLineSearchCache <: AbstractLineSearchCache
+    f
+    grad_f
+    p
+    c1
+    c2
+    α_init
+    α_max
+    maxiters::Int
+    zoom_maxiters::Int
+    mode
+end
+
+function CommonSolve.init(
+        prob::AbstractNonlinearProblem, alg::StrongWolfeLineSearch,
+        fu::Union{SArray, Number}, u::Union{SArray, Number};
+        grad_f = nothing, kwargs...
+    )
+    grad_f === nothing && error(
+        "StrongWolfeLineSearch requires `grad_f` for static (GPU) dispatch"
+    )
+    T = promote_type(eltype(fu), eltype(u))
+    return StaticStrongWolfeLineSearchCache(
+        prob.f, grad_f, prob.p,
+        T(alg.c1), T(alg.c2), T(alg.α_init), T(alg.α_max),
+        alg.maxiters, alg.zoom_maxiters, _ResidualMerit()
+    )
+end
+
+# Typed on OptimizationProblem (not AbstractOptimizationProblem) to avoid
+# ambiguity with SciMLBase's `init(::OptimizationProblem, alg, args...)`.
+function CommonSolve.init(
+        prob::OptimizationProblem, alg::StrongWolfeLineSearch, fu, u;
+        kwargs...
+    )
+    grad = prob.f.grad
+    grad === nothing && throw(
+        ArgumentError(
+            "StrongWolfeLineSearch with an OptimizationProblem requires \
+             `prob.f.grad` (out-of-place) on the OptimizationFunction."
+        )
+    )
+    T = eltype(prob.u0)
+    return StaticStrongWolfeLineSearchCache(
+        prob.f, grad, prob.p,
+        T(alg.c1), T(alg.c2), T(alg.α_init), T(alg.α_max),
+        alg.maxiters, alg.zoom_maxiters, _ScalarObjective()
+    )
+end
+
+function CommonSolve.init(
+        prob::AbstractNonlinearProblem, alg::StrongWolfeLineSearch, fu, u;
+        autodiff = nothing, kwargs...
+    )
+    return generic_strongwolfe_init(prob, alg, fu, u; autodiff, kwargs...)
+end
+
+function generic_strongwolfe_init(
+        prob::AbstractNonlinearProblem, alg::StrongWolfeLineSearch,
+        fu, u; stats::Union{SciMLBase.NLStats, Nothing} = nothing,
+        autodiff = nothing, kwargs...
+    )
+    autodiff = autodiff !== nothing ? autodiff : alg.autodiff
+    ev = init_merit(prob, fu, u; autodiff, stats)
+    T = promote_type(eltype(fu), eltype(u))
+    return build_strongwolfe_cache(ev, alg, T)
+end
+
+function CommonSolve.init(
+        prob::OptimizationProblem, alg::StrongWolfeLineSearch, u;
+        stats::Union{SciMLBase.NLStats, Nothing} = nothing, kwargs...
+    )
+    ev = init_merit(prob, u; stats)
+    return build_strongwolfe_cache(ev, alg, real(eltype(u)))
+end
+
+function build_strongwolfe_cache(ev, alg::StrongWolfeLineSearch, ::Type{T}) where {T}
+    return StrongWolfeLineSearchCache(
+        ev, T(alg.c1), T(alg.c2), T(alg.α_init), T(alg.α_max),
+        alg.maxiters, alg.zoom_maxiters, alg
+    )
+end
+
+@inline function _sw_interpolate(a_lo, a_hi, ϕ_lo, ϕ_hi, dϕ_lo, dϕ_hi)
+    d1 = dϕ_lo + dϕ_hi - 3 * (ϕ_lo - ϕ_hi) / (a_lo - a_hi)
+    desc = d1 * d1 - dϕ_lo * dϕ_hi
+    d2 = sqrt(max(desc, zero(desc)))
+    candidate = a_hi - (a_hi - a_lo) * ((dϕ_hi + d2 - d1) / (dϕ_hi - dϕ_lo + 2 * d2))
+    candidate = ifelse(isfinite(candidate), candidate, (a_lo + a_hi) / 2)
+    return ifelse(desc < 0, (a_lo + a_hi) / 2, candidate)
+end
+
+struct _SWStaticEval{F, G, P, U, D, M}
+    f::F
+    grad_f::G
+    p::P
+    u::U
+    du::D
+    mode::M
+end
+
+@inline _sw_objective(::_ResidualMerit, f, u, p) = sum(abs2, f(u, p)) / 2
+@inline _sw_objective(::_ScalarObjective, f, u, p) = f(u, p)
+
+@inline function (e::_SWStaticEval)(α)
+    u_new = e.u .+ α .* e.du
+    ϕ = _sw_objective(e.mode, e.f, u_new, e.p)
+    dϕ = dot(e.grad_f(u_new, e.p), e.du)
+    return (ϕ, dϕ)
+end
+
+# N&W Algorithm 3.6. Keep the fixed iteration count for GPU warp-uniform
+# execution; once `done`, later iterations just skip the body.
+@inline function _sw_zoom(
+        eval_fn, a_lo, a_hi, ϕ_0, dϕ_0,
+        ϕ_lo, dϕ_lo, ϕ_hi, dϕ_hi, c1, c2, maxiters
+    )
+    T = typeof(a_lo)
+    α_out = a_lo
+    ok = false
+    done = false
+
+    for _ in 1:maxiters
+        done && continue
+
+        α_j = _sw_interpolate(a_lo, a_hi, ϕ_lo, ϕ_hi, dϕ_lo, dϕ_hi)
+        bracket = T(0.01) * abs(a_hi - a_lo)
+        α_j = clamp(
+            α_j,
+            min(a_lo, a_hi) + bracket,
+            max(a_lo, a_hi) - bracket
+        )
+        ϕ_j, dϕ_j = eval_fn(α_j)
+
+        if (ϕ_j > ϕ_0 + c1 * α_j * dϕ_0) || (ϕ_j >= ϕ_lo)
+            a_hi = α_j
+            ϕ_hi = ϕ_j
+            dϕ_hi = dϕ_j
+        else
+            if abs(dϕ_j) <= -c2 * dϕ_0
+                α_out, ok, done = α_j, true, true
+            else
+                if dϕ_j * (a_hi - a_lo) >= zero(T)
+                    a_hi = a_lo
+                    ϕ_hi = ϕ_lo
+                    dϕ_hi = dϕ_lo
+                end
+                a_lo = α_j
+                ϕ_lo = ϕ_j
+                dϕ_lo = dϕ_j
+            end
+        end
+    end
+    if !done
+        α_out = a_lo
+    end
+    return (α_out, ok)
+end
+
+# N&W Algorithm 3.5. Keep the fixed iteration count for the same GPU
+# warp-uniform reason as `_sw_zoom`; once `done`, later iterations skip work.
+@inline function _sw_search(eval_fn, ϕ_0, dϕ_0, c1, c2, α_init, α_max, maxiters, zoom_maxiters)
+    T = typeof(α_init)
+
+    dϕ_0 >= zero(T) && return (zero(T), false)
+
+    α_prev = zero(T)
+    α_i = α_init
+    ϕ_prev = ϕ_0
+    dϕ_prev = dϕ_0
+    done = false
+    α_out = zero(T)
+    ok = false
+
+    for i in 1:maxiters
+        done && continue
+
+        ϕ_i, dϕ_i = eval_fn(α_i)
+
+        if (ϕ_i > ϕ_0 + c1 * α_i * dϕ_0) || (ϕ_i >= ϕ_prev && i > 1)
+            α_z, ok_z = _sw_zoom(
+                eval_fn, α_prev, α_i, ϕ_0, dϕ_0,
+                ϕ_prev, dϕ_prev, ϕ_i, dϕ_i, c1, c2, zoom_maxiters
+            )
+            α_out, ok, done = α_z, ok_z, true
+        elseif abs(dϕ_i) <= -c2 * dϕ_0
+            α_out, ok, done = α_i, true, true
+        elseif dϕ_i >= zero(T)
+            α_z, ok_z = _sw_zoom(
+                eval_fn, α_i, α_prev, ϕ_0, dϕ_0,
+                ϕ_i, dϕ_i, ϕ_prev, dϕ_prev, c1, c2, zoom_maxiters
+            )
+            α_out, ok, done = α_z, ok_z, true
+        elseif α_i >= α_max
+            # Blocked at the cap while still descending: accept on Armijo alone.
+            α_out, ok, done = α_i, true, true
+        else
+            α_prev = α_i
+            ϕ_prev = ϕ_i
+            dϕ_prev = dϕ_i
+            α_i = min(α_i * T(2), α_max)
+        end
+    end
+    if !done
+        α_out = α_i
+        ok = false
+    end
+    return (α_out, ok)
+end
+
+function CommonSolve.solve!(
+        cache::StrongWolfeLineSearchCache, u, du; ϕ0 = nothing, dϕ0 = nothing
+    )
+    T = promote_type(eltype(du), eltype(u))
+
+    ev = cache.merit_eval
+    invalidate!(ev)
+    ϕdϕ = @closure α -> merit_ϕdϕ(ev, u, du, α)
+
+    α_max = max(zero(T), T(cache.α_max))
+    α_init = min(max(zero(T), T(cache.α)), α_max)
+    α_max > zero(T) || return LineSearchSolution(zero(T), ReturnCode.Failure)
+
+    ϕ_0, dϕ_0 = merit_ϕdϕ_at_zero(ev, u, du, ϕ0, dϕ0)
+    (isfinite(ϕ_0) && isfinite(dϕ_0) && dϕ_0 < zero(T)) ||
+        return LineSearchSolution(α_init, ReturnCode.Failure)
+
+    α, ok = _sw_search(
+        ϕdϕ, ϕ_0, dϕ_0, cache.c1, cache.c2,
+        α_init, α_max, cache.maxiters, cache.zoom_maxiters
+    )
+    return solution_at!(
+        ev, u, du, ok ? α : α_init, ok ? ReturnCode.Success : ReturnCode.Failure
+    )
+end
+
+function CommonSolve.solve!(
+        cache::StaticStrongWolfeLineSearchCache, u, du;
+        α_max = cache.α_max
+    )
+    T = promote_type(eltype(du), eltype(u))
+    α_max_val = max(zero(T), min(T(cache.α_max), T(α_max)))
+    α_init = min(T(cache.α_init), α_max_val)
+
+    α_max_val > zero(T) ||
+        return LineSearchSolution(zero(T), ReturnCode.Failure)
+
+    eval_fn = _SWStaticEval(cache.f, cache.grad_f, cache.p, u, du, cache.mode)
+    ϕ_0, dϕ_0 = eval_fn(zero(T))
+
+    (isfinite(ϕ_0) && isfinite(dϕ_0) && dϕ_0 < zero(T)) ||
+        return LineSearchSolution(α_init, ReturnCode.Failure)
+
+    α, ok = _sw_search(
+        eval_fn, ϕ_0, dϕ_0, cache.c1, cache.c2,
+        α_init, α_max_val, cache.maxiters, cache.zoom_maxiters
+    )
+    return LineSearchSolution(ok ? α : α_init, ok ? ReturnCode.Success : ReturnCode.Failure)
+end
+
+function SciMLBase.reinit!(
+        cache::StrongWolfeLineSearchCache; p = missing, stats = missing, kwargs...
+    )
+    SciMLBase.reinit!(cache.merit_eval; p, stats)
+    cache.α = oftype(cache.α, cache.alg.α_init)
+    cache.c1 = oftype(cache.c1, cache.alg.c1)
+    cache.c2 = oftype(cache.c2, cache.alg.c2)
+    cache.α_max = oftype(cache.α_max, cache.alg.α_max)
+    return cache
+end
+
+function set_initial_step!(cache::StrongWolfeLineSearchCache, α)
+    cache.α = oftype(cache.α, α)
+    return cache
+end

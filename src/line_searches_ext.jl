@@ -20,6 +20,15 @@ differentiation for fast VJPs or JVPs.
     specified if analytic jacobian/jvp/vjp is not available.
   - `initial_alpha`: the initial step size to use. Defaults to `true` (which is equivalent
     to `1`).
+
+# Examples
+
+```julia
+using LineSearch
+using LineSearches
+
+alg = LineSearchesJL(method = LineSearches.Static(), initial_alpha = 1.0)
+```
 """
 struct LineSearchesJL{M, A, AD <: Union{Nothing, ADTypes.AbstractADType}} <:
     AbstractLineSearchAlgorithm
@@ -50,6 +59,7 @@ end
     deriv_op
     u_cache
     fu_cache
+    jv_cache
     stats <: Union{SciMLBase.NLStats, Nothing}
     alg <: LineSearchesJL
 end
@@ -64,14 +74,15 @@ function CommonSolve.init(
     T = promote_type(eltype(fu), eltype(u))
     autodiff = autodiff !== nothing ? autodiff : alg.autodiff
 
-    _, _, deriv_op = construct_jvp_or_vjp_operator(prob, fu, u; autodiff)
+    jvp_op, vjp_op, deriv_op = construct_jvp_or_vjp_operator(prob, fu, u; autodiff)
 
     @bb u_cache = similar(u)
     @bb fu_cache = similar(fu)
+    jv_cache = residual_jv_cache(jvp_op, vjp_op, fu, u)
 
     ϕ = @closure (
         f, p, u, du, α, u_cache,
-        fu_cache,
+        fu_cache
     ) -> begin
         @bb @. u_cache = u + α * du
         fu_cache = evaluate_f!!(f, fu_cache, u_cache, p)
@@ -80,40 +91,42 @@ function CommonSolve.init(
     end
 
     dϕ = @closure (
-        f, p, u, du, α, u_cache, fu_cache,
-        deriv_op,
+        f, p, u, du, α, u_cache, fu_cache, jv_cache,
+        deriv_op
     ) -> begin
         @bb @. u_cache = u + α * du
         fu_cache = evaluate_f!!(f, fu_cache, u_cache, p)
         add_nf!(stats)
-        return deriv_op(du, u_cache, fu_cache, p)
+        return deriv_op(jv_cache, du, u_cache, fu_cache, p)
     end
 
     ϕdϕ = @closure (
-        f, p, u, du, α, u_cache, fu_cache,
-        deriv_op,
+        f, p, u, du, α, u_cache, fu_cache, jv_cache,
+        deriv_op
     ) -> begin
         @bb @. u_cache = u + α * du
         fu_cache = evaluate_f!!(f, fu_cache, u_cache, p)
         add_nf!(stats)
-        deriv = deriv_op(du, u_cache, fu_cache, p)
+        deriv = deriv_op(jv_cache, du, u_cache, fu_cache, p)
         obj = @fastmath norm(fu_cache)^2 / 2
         return obj, deriv
     end
 
     return LineSearchesJLCache(
         prob.f, prob.p, ϕ, dϕ, ϕdϕ, alg.method, T(alg.initial_alpha), T(alg.initial_alpha),
-        deriv_op, u_cache, fu_cache, stats, alg
+        deriv_op, u_cache, fu_cache, jv_cache, stats, alg
     )
 end
 
 function CommonSolve.solve!(cache::LineSearchesJLCache, u, du)
     ϕ = @closure α -> cache.ϕ(cache.f, cache.p, u, du, α, cache.u_cache, cache.fu_cache)
     dϕ = @closure α -> cache.dϕ(
-        cache.f, cache.p, u, du, α, cache.u_cache, cache.fu_cache, cache.deriv_op
+        cache.f, cache.p, u, du, α, cache.u_cache, cache.fu_cache, cache.jv_cache,
+        cache.deriv_op
     )
     ϕdϕ = @closure α -> cache.ϕdϕ(
-        cache.f, cache.p, u, du, α, cache.u_cache, cache.fu_cache, cache.deriv_op
+        cache.f, cache.p, u, du, α, cache.u_cache, cache.fu_cache, cache.jv_cache,
+        cache.deriv_op
     )
 
     ϕ₀, dϕ₀ = ϕdϕ(zero(eltype(u)))

@@ -19,10 +19,9 @@ makedocs(;
     authors = "Avik Pal",
     modules = [LineSearch],
     clean = true,
-    doctest = false,
+    doctest = true,
     linkcheck = true,
     checkdocs = :exports,
-    warnonly = [:missing_docs],
     plugins = [bib],
     format = Documenter.HTML(
         assets = ["assets/favicon.ico", "assets/citations.css"],
