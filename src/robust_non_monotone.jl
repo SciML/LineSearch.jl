@@ -207,12 +207,11 @@ function solve_traced(cache::RobustNonMonotoneLineSearchCache, u, du, T)
         step = ifelse(accept₊, α₊, -α₋)
         accepted = accept₊ | accept₋
 
-        α₊ = α₊ * clamp(
-            α₊ * f_norm_old / (f₊ + (2 * α₊ - 1) * f_norm_old), τ_min, τ_max
-        )
-        α₋ = α₋ * clamp(
-            α₋ * f_norm_old / (f₋ + (2 * α₋ - 1) * f_norm_old), τ_min, τ_max
-        )
+        r₊ = α₊ * f_norm_old / (f₊ + (2 * α₊ - 1) * f_norm_old)
+        r₋ = α₋ * f_norm_old / (f₋ + (2 * α₋ - 1) * f_norm_old)
+        # XLA's clamp maps NaN to a bound; Julia's clamp propagates it.
+        α₊ = α₊ * ifelse(isnan(r₊), r₊, clamp(r₊, τ_min, τ_max))
+        α₋ = α₋ * ifelse(isnan(r₋), r₋, clamp(r₋, τ_min, τ_max))
         iter = iter + 1
     end
 

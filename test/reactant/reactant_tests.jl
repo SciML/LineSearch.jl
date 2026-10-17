@@ -89,6 +89,20 @@ end
     end
 end
 
+@testset "compiled line search with NaN trial merits" begin
+    nan_residual(u, p) = ifelse.(u .< 0, NaN, u .^ 2 .- 1)
+    u, du = [0.5, 0.2], [-10.0, 3.0]
+    alg = RobustNonMonotoneLineSearch(; maxiters = 3)
+    α_host, ok_host, _ = line_search(nan_residual, u, du, nothing, alg)
+    @test α_host == 1.0
+    @test !ok_host
+    α_jit, ok_jit, _ = @jit line_search(
+        nan_residual, Reactant.to_rarray(u), Reactant.to_rarray(du), nothing, alg
+    )
+    @test Float64(α_jit) == 1.0
+    @test !Bool(ok_jit)
+end
+
 # Merits whose `sqrt(dot(x, x))` underflows to zero or overflows to `Inf`. Expected steps,
 # return codes and history are those of the host loop in LineSearch v0.1.19.
 @testset "compiled line search with finite extreme merits" begin
