@@ -80,3 +80,6 @@ function residual_jv_cache(jvp_op, vjp_op, fu, u)
     @bb jv = similar(u)
     return jv
 end
+
+# Loop-carried scalars must already be traced when a Reactant `@trace while` loop starts.
+maybe_traced(x) = ReactantCore.within_compile() ? ReactantCore.promote_to_traced(x) : x
