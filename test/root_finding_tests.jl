@@ -210,6 +210,21 @@ end
     end
 end
 
+@testset "BackTracking step stays finite once Float32 interpolation underflows" begin
+    using CommonSolve: init, solve!
+    using SciMLBase: NonlinearProblem
+    using ADTypes: AutoForwardDiff
+    import ForwardDiff
+
+    # The residual jumps from 1 to 2 past u = 0, so no positive step passes Armijo. The shrinking
+    # trial steps underflow the cubic's divisor, and its NaN minimizer must not become the step.
+    r(u, p) = ifelse.(u .> 0, 2.0f0, 1.0f0)
+    u0 = Float32[0]
+    cache = init(NonlinearProblem(r, u0), BackTracking(; autodiff = AutoForwardDiff()), r(u0, nothing), u0)
+    sol = solve!(cache, u0, Float32[1]; ϕ0 = 0.5f0, dϕ0 = 0.0f0)
+    @test isfinite(sol.step_size)
+end
+
 @testset "Static Strong Wolfe residual mode" begin
     using CommonSolve: init, solve!
     using SciMLBase: NonlinearProblem, ReturnCode
