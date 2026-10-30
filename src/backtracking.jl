@@ -110,7 +110,7 @@ function CommonSolve.solve!(
         return solution_at!(ev, u, du, α₂, ReturnCode.Success)
     α_tmp = -(dϕ₀ * α₂^2) / (2 * (ϕx₁ - ϕ₀ - dϕ₀ * α₂))
     α₁ = α₂
-    α_tmp = min(α_tmp, α₂ * T(cache.alg.ρ_hi))
+    α_tmp = isnan(α_tmp) ? α₂ * T(cache.alg.ρ_hi) : min(α_tmp, α₂ * T(cache.alg.ρ_hi))
     α₂ = max(α_tmp, α₂ * T(cache.alg.ρ_lo))
     ϕx₀, ϕx₁ = ϕx₁, ϕ(α₂)
 
@@ -121,7 +121,7 @@ function CommonSolve.solve!(
         α_tmp = compute_alpha_backtracking(cache.alg.order, T, dϕ₀, ϕ₀, ϕx₀, ϕx₁, α₁, α₂)
 
         α₁ = α₂
-        α_tmp = min(α_tmp, α₂ * T(cache.alg.ρ_hi))
+        α_tmp = isnan(α_tmp) ? α₂ * T(cache.alg.ρ_hi) : min(α_tmp, α₂ * T(cache.alg.ρ_hi))
         α₂ = max(α_tmp, α₂ * T(cache.alg.ρ_lo))
 
         ϕx₀, ϕx₁ = ϕx₁, ϕ(α₂)
