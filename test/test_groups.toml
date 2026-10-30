@@ -10,3 +10,9 @@ versions = ["1", "lts"]
 [QA]
 versions = ["lts", "1"]
 in_all = false
+
+# Own environment with the latest Reactant; it must not share a process with the root
+# test environment (which may hold an older ReactantCore), so it is not part of "All".
+[Reactant]
+versions = ["1"]
+in_all = false
