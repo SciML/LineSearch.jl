@@ -252,3 +252,9 @@ end
         @test sol.step_size == α_init
     end
 end
+
+@testset "BackTracking cubic step with a tiny cubic coefficient in Float32" begin
+    # ϕ(α) = 1 - 1e-3 α + α² + 1e-6 α³ at α = 1 and 1/2; its minimizer is α ≈ 5e-4.
+    α = LineSearch.compute_alpha_backtracking(Val(3), Float32, -1.0f-3, 1.0f0, 1.999001f0, 1.2495002f0, 1.0f0, 0.5f0)
+    @test α ≈ 5.0f-4 rtol = 1.0f-3
+end
