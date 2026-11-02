@@ -1,0 +1,20 @@
+[deps]
+CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
+LineSearch = "87fe0de2-c867-4266-b59a-2f0a94fc965b"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
+ReactantCore = "a3311ec8-5e00-46d5-b541-4f83e724a433"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources]
+LineSearch = {path = "../.."}
+
+[compat]
+CommonSolve = "0.2.4"
+LinearAlgebra = "1.10"
+Reactant = "0.2.289"
+ReactantCore = "0.1.21"
+SciMLBase = "3.58"
+Test = "1.10"
+julia = "1.10"

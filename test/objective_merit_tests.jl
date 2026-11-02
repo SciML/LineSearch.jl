@@ -120,6 +120,7 @@ import ForwardDiff
         @test sol.retcode == ReturnCode.Success
         @test sol.ϕ === nothing
         @test sol.dϕ === nothing
+        @test typeof(sol) === LineSearchSolution{Float64, Nothing, Nothing}
     end
 
     # ------------------------------------------------ gradient arity handling
