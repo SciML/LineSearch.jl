@@ -2,7 +2,7 @@
 
 julia_version = "1.13.3"
 manifest_format = "2.1"
-project_hash = "f6b622fa78eb0a2886ce18dee01e80b9f46168d9"
+project_hash = "ff45ef4ec0546416956a40d76f6e52f7cfb7f6e1"
 
 [[deps.ADTypes]]
 deps = ["PrecompileTools"]
@@ -339,6 +339,12 @@ registries = "General"
 uuid = "e2ba6199-217a-4e67-a87a-7c52f15ade04"
 version = "0.1.11"
 
+[[deps.ExpressionExplorer]]
+git-tree-sha1 = "fdcc9d4a253e0041d37c95487f9ae027c3ec002d"
+registries = "General"
+uuid = "21656369-7473-754a-2065-74616d696c43"
+version = "1.1.6"
+
 [[deps.FastClosures]]
 git-tree-sha1 = "acebe244d53ee1b461970f8910c235b259e772ef"
 registries = "General"
@@ -539,8 +545,8 @@ uuid = "94ce4f54-9a6c-5748-9c1c-f9c7231a4531"
 version = "1.18.0+0"
 
 [[deps.LineSearch]]
-deps = ["ADTypes", "CommonSolve", "ConcreteStructs", "FastClosures", "LinearAlgebra", "MaybeInplace", "PrecompileTools", "SciMLBase", "SciMLJacobianOperators", "StaticArraysCore"]
-path = "/home/runner/work/LineSearch.jl/LineSearch.jl"
+deps = ["ADTypes", "CommonSolve", "ConcreteStructs", "FastClosures", "LinearAlgebra", "MaybeInplace", "PrecompileTools", "ReactantCore", "SciMLBase", "SciMLJacobianOperators", "StaticArraysCore"]
+path = "/home/runner/_work/LineSearch.jl/LineSearch.jl"
 uuid = "87fe0de2-c867-4266-b59a-2f0a94fc965b"
 version = "0.1.20"
 
@@ -694,6 +700,13 @@ version = "1.11.0"
 deps = ["SHA"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 version = "1.11.0"
+
+[[deps.ReactantCore]]
+deps = ["ExpressionExplorer", "MacroTools"]
+git-tree-sha1 = "1fe4e616752a0c4818ae88a504fc59b0fb016659"
+registries = "General"
+uuid = "a3311ec8-5e00-46d5-b541-4f83e724a433"
+version = "0.1.26"
 
 [[deps.RecipesBase]]
 deps = ["PrecompileTools"]
