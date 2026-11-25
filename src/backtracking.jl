@@ -146,7 +146,7 @@ end
     a = (a₁ - a₂) * div
     b = (-α₁ * a₁ + α₂ * a₂) * div
 
-    return ifelse(iszero(a), dϕ₀ / 2b, (-b + sqrt(max(b^2 - 3a * dϕ₀, T(0)))) / 3a)
+    return ifelse(iszero(a), -dϕ₀ / 2b, (-b + sqrt(max(b^2 - 3a * dϕ₀, T(0)))) / 3a)
 end
 
 function SciMLBase.reinit!(

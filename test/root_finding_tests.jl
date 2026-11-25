@@ -210,6 +210,11 @@ end
     end
 end
 
+@testset "BackTracking cubic step on a quadratic merit" begin
+    # ϕ(α) = (1 - α)², sampled at α = 1 and 1/2: the cubic coefficient vanishes and the minimizer is α = 1.
+    @test LineSearch.compute_alpha_backtracking(Val(3), Float64, -2.0, 1.0, 0.0, 0.25, 1.0, 0.5) == 1.0
+end
+
 @testset "Static Strong Wolfe residual mode" begin
     using CommonSolve: init, solve!
     using SciMLBase: NonlinearProblem, ReturnCode
