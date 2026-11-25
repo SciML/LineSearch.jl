@@ -146,7 +146,9 @@ end
     a = (a₁ - a₂) * div
     b = (-α₁ * a₁ + α₂ * a₂) * div
 
-    return ifelse(iszero(a), dϕ₀ / 2b, (-b + sqrt(max(b^2 - 3a * dϕ₀, T(0)))) / 3a)
+    sqrt_d = sqrt(max(b^2 - 3a * dϕ₀, T(0)))
+    # For b > 0 the conjugate form avoids cancelling -b against sqrt_d when a is small.
+    return ifelse(iszero(a), dϕ₀ / 2b, ifelse(b > 0, -dϕ₀ / (b + sqrt_d), (-b + sqrt_d) / 3a))
 end
 
 function SciMLBase.reinit!(
